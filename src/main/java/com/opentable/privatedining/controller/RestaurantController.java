@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+//TODO: No validation is done on the input data, consider adding validation annotations and handling
 @RestController
 @RequestMapping("/v1/restaurants")
 @Tag(name = "Restaurant", description = "Restaurant management API")

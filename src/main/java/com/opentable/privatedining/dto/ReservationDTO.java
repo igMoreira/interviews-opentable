@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+// TODO: [Optional] add lombok annotations to reduce boilerplate code
 public class ReservationDTO {
 
     @Schema(description = "Unique identifier for the reservation", example = "507f1f77bcf86cd799439011", type = "string")

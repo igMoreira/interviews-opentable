@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+//TODO: [Optional] lombok can be used to reduce boilerplate code
 @Document(collection = "reservations")
 public class Reservation {
 

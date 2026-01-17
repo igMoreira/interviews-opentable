@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+//TODO: No validation is done on the input data, consider adding validation annotations and handling
 @RestController
 @RequestMapping("/v1/reservations")
 @Tag(name = "Reservation", description = "Reservation management API")

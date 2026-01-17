@@ -5,6 +5,7 @@ import com.opentable.privatedining.model.Reservation;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
 
+//TODO: [Optional] use mapStruct to reduce boilerplate code
 @Component
 public class ReservationMapper {
 
