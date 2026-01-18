@@ -1,13 +1,11 @@
 package com.opentable.privatedining.model;
 
+import com.opentable.privatedining.config.SpaceDefaultsConfig;
+
 import java.time.LocalTime;
 import java.util.UUID;
 
 public class Space {
-
-    private static final LocalTime DEFAULT_OPERATING_START = LocalTime.of(9, 0);
-    private static final LocalTime DEFAULT_OPERATING_END = LocalTime.of(22, 0);
-    private static final Integer DEFAULT_TIME_SLOT_DURATION_MINUTES = 60;
 
     private UUID id;
     private String name;
@@ -61,7 +59,10 @@ public class Space {
     }
 
     public LocalTime getOperatingStartTime() {
-        return operatingStartTime != null ? operatingStartTime : DEFAULT_OPERATING_START;
+        if (operatingStartTime != null) {
+            return operatingStartTime;
+        }
+        return SpaceDefaultsConfig.getInstance().getOperatingStartTime();
     }
 
     public void setOperatingStartTime(LocalTime operatingStartTime) {
@@ -69,7 +70,10 @@ public class Space {
     }
 
     public LocalTime getOperatingEndTime() {
-        return operatingEndTime != null ? operatingEndTime : DEFAULT_OPERATING_END;
+        if (operatingEndTime != null) {
+            return operatingEndTime;
+        }
+        return SpaceDefaultsConfig.getInstance().getOperatingEndTime();
     }
 
     public void setOperatingEndTime(LocalTime operatingEndTime) {
@@ -77,7 +81,10 @@ public class Space {
     }
 
     public Integer getTimeSlotDurationMinutes() {
-        return timeSlotDurationMinutes != null ? timeSlotDurationMinutes : DEFAULT_TIME_SLOT_DURATION_MINUTES;
+        if (timeSlotDurationMinutes != null) {
+            return timeSlotDurationMinutes;
+        }
+        return SpaceDefaultsConfig.getInstance().getTimeSlotDurationMinutes();
     }
 
     public void setTimeSlotDurationMinutes(Integer timeSlotDurationMinutes) {

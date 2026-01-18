@@ -6,6 +6,14 @@ spring:
     mongodb:
       database: private_dining
 
+# Private Dining Space Defaults
+private-dining:
+  space:
+    defaults:
+      operating-start-time: "09:00"
+      operating-end-time: "22:00"
+      time-slot-duration-minutes: 60
+
 # Embedded MongoDB Configuration
 de:
   flapdoodle:
