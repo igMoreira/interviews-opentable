@@ -2,32 +2,16 @@ package com.opentable.privatedining.mapper;
 
 import com.opentable.privatedining.dto.SpaceDTO;
 import com.opentable.privatedining.model.Space;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class SpaceMapper {
+@Mapper(componentModel = "spring")
+public interface SpaceMapper {
 
-    public SpaceDTO toDTO(Space space) {
-        if (space == null) {
-            return null;
-        }
-        return new SpaceDTO(
-                space.getId(),
-                space.getName(),
-                space.getMinCapacity(),
-                space.getMaxCapacity()
-        );
-    }
+    SpaceDTO toDTO(Space space);
 
-    public Space toModel(SpaceDTO spaceDTO) {
-        if (spaceDTO == null) {
-            return null;
-        }
-        // Space ID is always generated server-side, ignore any client-provided ID
-        return new Space(
-                spaceDTO.getName(),
-                spaceDTO.getMinCapacity(),
-                spaceDTO.getMaxCapacity()
-        );
-    }
+    // Space ID is always generated server-side, ignore any client-provided ID
+    @Mapping(target = "id", ignore = true)
+    Space toModel(SpaceDTO spaceDTO);
 }
+

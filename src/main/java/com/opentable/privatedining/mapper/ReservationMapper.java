@@ -3,63 +3,37 @@ package com.opentable.privatedining.mapper;
 import com.opentable.privatedining.dto.ReservationDTO;
 import com.opentable.privatedining.model.Reservation;
 import org.bson.types.ObjectId;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
-//TODO: [Optional] use mapStruct to reduce boilerplate code
-@Component
-public class ReservationMapper {
+@Mapper(componentModel = "spring")
+public interface ReservationMapper {
 
-    public ReservationDTO toDTO(Reservation reservation) {
-        if (reservation == null) {
-            return null;
-        }
+    @Mapping(target = "id", source = "id", qualifiedByName = "objectIdToString")
+    @Mapping(target = "restaurantId", source = "restaurantId", qualifiedByName = "objectIdToString")
+    ReservationDTO toDTO(Reservation reservation);
 
-        ReservationDTO dto = new ReservationDTO(
-                reservation.getRestaurantId() != null ? reservation.getRestaurantId().toString() : null,
-                reservation.getSpaceId(),
-                reservation.getCustomerEmail(),
-                reservation.getStartTime(),
-                reservation.getEndTime(),
-                reservation.getPartySize(),
-                reservation.getStatus()
-        );
+    @Mapping(target = "id", source = "id", qualifiedByName = "stringToObjectId")
+    @Mapping(target = "restaurantId", source = "restaurantId", qualifiedByName = "stringToObjectId")
+    Reservation toModel(ReservationDTO reservationDTO);
 
-        if (reservation.getId() != null) {
-            dto.setId(reservation.getId().toString());
-        }
-
-        return dto;
+    @Named("objectIdToString")
+    default String objectIdToString(ObjectId objectId) {
+        return objectId != null ? objectId.toString() : null;
     }
 
-    public Reservation toModel(ReservationDTO reservationDTO) {
-        if (reservationDTO == null) {
-            return null;
-        }
-
-        Reservation reservation = new Reservation();
-        reservation.setCustomerEmail(reservationDTO.getCustomerEmail());
-        reservation.setSpaceId(reservationDTO.getSpaceId());
-        reservation.setStartTime(reservationDTO.getStartTime());
-        reservation.setEndTime(reservationDTO.getEndTime());
-        reservation.setPartySize(reservationDTO.getPartySize());
-        reservation.setStatus(reservationDTO.getStatus());
-
-        if (reservationDTO.getId() != null && !reservationDTO.getId().isEmpty()) {
+    @Named("stringToObjectId")
+    default ObjectId stringToObjectId(String id) {
+        if (id != null && !id.isEmpty()) {
             try {
-                reservation.setId(new ObjectId(reservationDTO.getId()));
+                return new ObjectId(id);
             } catch (IllegalArgumentException e) {
-                // Invalid ObjectId format, leave it null for new entities
+                // Invalid ObjectId format, return null
+                return null;
             }
         }
-
-        if (reservationDTO.getRestaurantId() != null && !reservationDTO.getRestaurantId().isEmpty()) {
-            try {
-                reservation.setRestaurantId(new ObjectId(reservationDTO.getRestaurantId()));
-            } catch (IllegalArgumentException e) {
-                // Invalid ObjectId format, this should be handled by validation
-            }
-        }
-
-        return reservation;
+        return null;
     }
 }
+

@@ -1,75 +1,36 @@
 package com.opentable.privatedining.mapper;
 
 import com.opentable.privatedining.dto.RestaurantDTO;
-import com.opentable.privatedining.dto.SpaceDTO;
 import com.opentable.privatedining.model.Restaurant;
-import com.opentable.privatedining.model.Space;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+@Mapper(componentModel = "spring", uses = SpaceMapper.class)
+public interface RestaurantMapper {
 
-@Component
-public class RestaurantMapper {
+    @Mapping(target = "id", source = "id", qualifiedByName = "objectIdToString")
+    RestaurantDTO toDTO(Restaurant restaurant);
 
-    private final SpaceMapper spaceMapper;
+    @Mapping(target = "id", source = "id", qualifiedByName = "stringToObjectId")
+    Restaurant toModel(RestaurantDTO restaurantDTO);
 
-    public RestaurantMapper(SpaceMapper spaceMapper) {
-        this.spaceMapper = spaceMapper;
+    @Named("objectIdToString")
+    default String objectIdToString(ObjectId objectId) {
+        return objectId != null ? objectId.toString() : null;
     }
 
-    public RestaurantDTO toDTO(Restaurant restaurant) {
-        if (restaurant == null) {
-            return null;
-        }
-
-        List<SpaceDTO> spaceDTOs = new ArrayList<>();
-        if (restaurant.getSpaces() != null) {
-            spaceDTOs = restaurant.getSpaces().stream()
-                    .map(spaceMapper::toDTO)
-                    .collect(Collectors.toList());
-        }
-
-        return new RestaurantDTO(
-                restaurant.getId() != null ? restaurant.getId().toString() : null,
-                restaurant.getName(),
-                restaurant.getAddress(),
-                restaurant.getCuisineType(),
-                restaurant.getCapacity(),
-                spaceDTOs
-        );
-    }
-
-    public Restaurant toModel(RestaurantDTO restaurantDTO) {
-        if (restaurantDTO == null) {
-            return null;
-        }
-
-        Restaurant restaurant = new Restaurant(
-                restaurantDTO.getName(),
-                restaurantDTO.getAddress(),
-                restaurantDTO.getCuisineType(),
-                restaurantDTO.getCapacity()
-        );
-
-        if (restaurantDTO.getId() != null && !restaurantDTO.getId().isEmpty()) {
+    @Named("stringToObjectId")
+    default ObjectId stringToObjectId(String id) {
+        if (id != null && !id.isEmpty()) {
             try {
-                restaurant.setId(new ObjectId(restaurantDTO.getId()));
+                return new ObjectId(id);
             } catch (IllegalArgumentException e) {
                 // Invalid ObjectId format, leave it null for new entities
+                return null;
             }
         }
-
-        if (restaurantDTO.getSpaces() != null) {
-            List<Space> spaces = restaurantDTO.getSpaces().stream()
-                    .map(spaceMapper::toModel)
-                    .collect(Collectors.toList());
-            restaurant.setSpaces(spaces);
-        }
-
-        return restaurant;
+        return null;
     }
 }

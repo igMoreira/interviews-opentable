@@ -38,7 +38,6 @@ public class ReservationController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of reservations",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ReservationDTO.class)))
     public List<ReservationDTO> getAllReservations() {
-        //TODO: Feature 2
         return reservationService.getAllReservations()
                 .stream()
                 .map(reservationMapper::toDTO)
@@ -78,7 +77,6 @@ public class ReservationController {
     public ResponseEntity<ReservationDTO> createReservation(
             @Parameter(description = "Reservation object to be created", required = true)
             @RequestBody ReservationDTO reservationDTO) {
-        //TODO: Feature 1
         Reservation reservation = reservationMapper.toModel(reservationDTO);
         Reservation savedReservation = reservationService.createReservation(reservation);
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationMapper.toDTO(savedReservation));
