@@ -11,15 +11,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
-//TODO: No validation is done on the input data, consider adding validation annotations and handling
+@Validated
 @RestController
 @RequestMapping("/v1/reservations")
 @Tag(name = "Reservation", description = "Reservation management API")
@@ -76,7 +78,7 @@ public class ReservationController {
     })
     public ResponseEntity<ReservationDTO> createReservation(
             @Parameter(description = "Reservation object to be created", required = true)
-            @RequestBody ReservationDTO reservationDTO) {
+            @Valid @RequestBody ReservationDTO reservationDTO) {
         Reservation reservation = reservationMapper.toModel(reservationDTO);
         Reservation savedReservation = reservationService.createReservation(reservation);
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationMapper.toDTO(savedReservation));

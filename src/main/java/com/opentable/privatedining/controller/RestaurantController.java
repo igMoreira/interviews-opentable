@@ -16,10 +16,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.bson.types.ObjectId;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,10 +30,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-//TODO: No validation is done on the input data, consider adding validation annotations and handling
 @RestController
 @RequestMapping("/v1/restaurants")
 @Tag(name = "Restaurant", description = "Restaurant management API")
+@Validated
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
@@ -88,7 +91,7 @@ public class RestaurantController {
     })
     public ResponseEntity<RestaurantDTO> createRestaurant(
             @Parameter(description = "Restaurant object to be created", required = true)
-            @RequestBody RestaurantDTO restaurantDTO) {
+            @Valid @RequestBody RestaurantDTO restaurantDTO) {
         Restaurant restaurant = restaurantMapper.toModel(restaurantDTO);
         Restaurant savedRestaurant = restaurantService.createRestaurant(restaurant);
         return ResponseEntity.status(HttpStatus.CREATED).body(restaurantMapper.toDTO(savedRestaurant));
@@ -106,7 +109,7 @@ public class RestaurantController {
             @Parameter(description = "ID of the restaurant to update", required = true)
             @PathVariable String id,
             @Parameter(description = "Updated restaurant object", required = true)
-            @RequestBody RestaurantDTO restaurantDTO) {
+            @Valid @RequestBody RestaurantDTO restaurantDTO) {
         try {
             ObjectId objectId = new ObjectId(id);
             Restaurant restaurant = restaurantMapper.toModel(restaurantDTO);
@@ -149,7 +152,7 @@ public class RestaurantController {
             @Parameter(description = "ID of the restaurant", required = true)
             @PathVariable String id,
             @Parameter(description = "Space object to be added", required = true)
-            @RequestBody SpaceDTO spaceDTO) {
+            @Valid @RequestBody SpaceDTO spaceDTO) {
         try {
             ObjectId objectId = new ObjectId(id);
             Space space = spaceMapper.toModel(spaceDTO);
@@ -205,9 +208,9 @@ public class RestaurantController {
             @Parameter(description = "Optional space ID to filter the report to a single space")
             @RequestParam(required = false) UUID spaceId,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page number must be 0 or greater") int page,
             @Parameter(description = "Page size", example = "10")
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size) {
 
         ObjectId restaurantId = new ObjectId(id);
         OccupancyReportResponse report = occupancyAnalyticsService.generateOccupancyReport(
