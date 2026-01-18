@@ -1,18 +1,27 @@
 package com.opentable.privatedining.model;
 
 import com.opentable.privatedining.config.SpaceDefaultsConfig;
-
 import java.time.LocalTime;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
+@AllArgsConstructor
+@Getter
+@Setter
 public class Space {
 
     private UUID id;
     private String name;
     private Integer minCapacity;
     private Integer maxCapacity;
+    @Getter(AccessLevel.NONE)
     private LocalTime operatingStartTime;
+    @Getter(AccessLevel.NONE)
     private LocalTime operatingEndTime;
+    @Getter(AccessLevel.NONE)
     private Integer timeSlotDurationMinutes;
 
     public Space() {
@@ -26,47 +35,11 @@ public class Space {
         this.maxCapacity = maxCapacity;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getMinCapacity() {
-        return minCapacity;
-    }
-
-    public void setMinCapacity(Integer minCapacity) {
-        this.minCapacity = minCapacity;
-    }
-
-    public Integer getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(Integer maxCapacity) {
-        this.maxCapacity = maxCapacity;
-    }
-
     public LocalTime getOperatingStartTime() {
         if (operatingStartTime != null) {
             return operatingStartTime;
         }
         return SpaceDefaultsConfig.getInstance().getOperatingStartTime();
-    }
-
-    public void setOperatingStartTime(LocalTime operatingStartTime) {
-        this.operatingStartTime = operatingStartTime;
     }
 
     public LocalTime getOperatingEndTime() {
@@ -76,19 +49,11 @@ public class Space {
         return SpaceDefaultsConfig.getInstance().getOperatingEndTime();
     }
 
-    public void setOperatingEndTime(LocalTime operatingEndTime) {
-        this.operatingEndTime = operatingEndTime;
-    }
-
     public Integer getTimeSlotDurationMinutes() {
         if (timeSlotDurationMinutes != null) {
             return timeSlotDurationMinutes;
         }
         return SpaceDefaultsConfig.getInstance().getTimeSlotDurationMinutes();
-    }
-
-    public void setTimeSlotDurationMinutes(Integer timeSlotDurationMinutes) {
-        this.timeSlotDurationMinutes = timeSlotDurationMinutes;
     }
 }
 

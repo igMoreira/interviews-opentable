@@ -1,10 +1,17 @@
 package com.opentable.privatedining.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Complete occupancy analytics report for a restaurant")
 public class OccupancyReportResponse {
 
@@ -34,93 +41,5 @@ public class OccupancyReportResponse {
 
     @Schema(description = "Total number of pages", example = "1")
     private int totalPages;
-
-    public OccupancyReportResponse() {}
-
-    public OccupancyReportResponse(String restaurantId, LocalDateTime reportStartTime, LocalDateTime reportEndTime,
-                                    OccupancySummary summary, List<SpaceOccupancyReport> spaceReports,
-                                    int page, int size, long totalElements, int totalPages) {
-        this.restaurantId = restaurantId;
-        this.reportStartTime = reportStartTime;
-        this.reportEndTime = reportEndTime;
-        this.summary = summary;
-        this.spaceReports = spaceReports;
-        this.page = page;
-        this.size = size;
-        this.totalElements = totalElements;
-        this.totalPages = totalPages;
-    }
-
-    public String getRestaurantId() {
-        return restaurantId;
-    }
-
-    public void setRestaurantId(String restaurantId) {
-        this.restaurantId = restaurantId;
-    }
-
-    public LocalDateTime getReportStartTime() {
-        return reportStartTime;
-    }
-
-    public void setReportStartTime(LocalDateTime reportStartTime) {
-        this.reportStartTime = reportStartTime;
-    }
-
-    public LocalDateTime getReportEndTime() {
-        return reportEndTime;
-    }
-
-    public void setReportEndTime(LocalDateTime reportEndTime) {
-        this.reportEndTime = reportEndTime;
-    }
-
-    public OccupancySummary getSummary() {
-        return summary;
-    }
-
-    public void setSummary(OccupancySummary summary) {
-        this.summary = summary;
-    }
-
-    public List<SpaceOccupancyReport> getSpaceReports() {
-        return spaceReports;
-    }
-
-    public void setSpaceReports(List<SpaceOccupancyReport> spaceReports) {
-        this.spaceReports = spaceReports;
-    }
-
-    public int getPage() {
-        return page;
-    }
-
-    public void setPage(int page) {
-        this.page = page;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    public long getTotalElements() {
-        return totalElements;
-    }
-
-    public void setTotalElements(long totalElements) {
-        this.totalElements = totalElements;
-    }
-
-    public int getTotalPages() {
-        return totalPages;
-    }
-
-    public void setTotalPages(int totalPages) {
-        this.totalPages = totalPages;
-    }
 }
 

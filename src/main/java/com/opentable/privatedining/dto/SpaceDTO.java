@@ -2,12 +2,15 @@ package com.opentable.privatedining.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalTime;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-//TODO: [Feature 1 - a] Allow operating windows for private dining spaces
-//TODO: [Feature 1 - b] Allow time slots for private dining reservations
+@Getter
+@Setter
+@NoArgsConstructor
 public class SpaceDTO {
 
     @Schema(description = "Unique identifier for the space", example = "123e4567-e89b-12d3-a456-426614174000", type = "string")
@@ -33,8 +36,6 @@ public class SpaceDTO {
     @Schema(description = "Time slot duration in minutes for reservations (defaults to 60 if not set)", example = "60")
     private Integer timeSlotDurationMinutes;
 
-    public SpaceDTO() {}
-
     public SpaceDTO(String name, Integer minCapacity, Integer maxCapacity) {
         this.name = name;
         this.minCapacity = minCapacity;
@@ -46,61 +47,5 @@ public class SpaceDTO {
         this.name = name;
         this.minCapacity = minCapacity;
         this.maxCapacity = maxCapacity;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getMinCapacity() {
-        return minCapacity;
-    }
-
-    public void setMinCapacity(Integer minCapacity) {
-        this.minCapacity = minCapacity;
-    }
-
-    public Integer getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(Integer maxCapacity) {
-        this.maxCapacity = maxCapacity;
-    }
-
-    public LocalTime getOperatingStartTime() {
-        return operatingStartTime;
-    }
-
-    public void setOperatingStartTime(LocalTime operatingStartTime) {
-        this.operatingStartTime = operatingStartTime;
-    }
-
-    public LocalTime getOperatingEndTime() {
-        return operatingEndTime;
-    }
-
-    public void setOperatingEndTime(LocalTime operatingEndTime) {
-        this.operatingEndTime = operatingEndTime;
-    }
-
-    public Integer getTimeSlotDurationMinutes() {
-        return timeSlotDurationMinutes;
-    }
-
-    public void setTimeSlotDurationMinutes(Integer timeSlotDurationMinutes) {
-        this.timeSlotDurationMinutes = timeSlotDurationMinutes;
     }
 }

@@ -1,10 +1,17 @@
 package com.opentable.privatedining.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.List;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Occupancy report for a specific space")
 public class SpaceOccupancyReport {
 
@@ -28,74 +35,5 @@ public class SpaceOccupancyReport {
 
     @Schema(description = "Hourly breakdown of occupancy data")
     private List<TimeSlotOccupancy> hourlyBreakdown;
-
-    public SpaceOccupancyReport() {}
-
-    public SpaceOccupancyReport(UUID spaceId, String spaceName, int maxCapacity, int totalReservations,
-                                 int peakOccupancy, double averageUtilization, List<TimeSlotOccupancy> hourlyBreakdown) {
-        this.spaceId = spaceId;
-        this.spaceName = spaceName;
-        this.maxCapacity = maxCapacity;
-        this.totalReservations = totalReservations;
-        this.peakOccupancy = peakOccupancy;
-        this.averageUtilization = averageUtilization;
-        this.hourlyBreakdown = hourlyBreakdown;
-    }
-
-    public UUID getSpaceId() {
-        return spaceId;
-    }
-
-    public void setSpaceId(UUID spaceId) {
-        this.spaceId = spaceId;
-    }
-
-    public String getSpaceName() {
-        return spaceName;
-    }
-
-    public void setSpaceName(String spaceName) {
-        this.spaceName = spaceName;
-    }
-
-    public int getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(int maxCapacity) {
-        this.maxCapacity = maxCapacity;
-    }
-
-    public int getTotalReservations() {
-        return totalReservations;
-    }
-
-    public void setTotalReservations(int totalReservations) {
-        this.totalReservations = totalReservations;
-    }
-
-    public int getPeakOccupancy() {
-        return peakOccupancy;
-    }
-
-    public void setPeakOccupancy(int peakOccupancy) {
-        this.peakOccupancy = peakOccupancy;
-    }
-
-    public double getAverageUtilization() {
-        return averageUtilization;
-    }
-
-    public void setAverageUtilization(double averageUtilization) {
-        this.averageUtilization = averageUtilization;
-    }
-
-    public List<TimeSlotOccupancy> getHourlyBreakdown() {
-        return hourlyBreakdown;
-    }
-
-    public void setHourlyBreakdown(List<TimeSlotOccupancy> hourlyBreakdown) {
-        this.hourlyBreakdown = hourlyBreakdown;
-    }
 }
 

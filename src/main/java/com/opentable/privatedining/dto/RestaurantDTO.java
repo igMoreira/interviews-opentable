@@ -1,10 +1,13 @@
 package com.opentable.privatedining.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class RestaurantDTO {
 
     @Schema(description = "Unique identifier for the restaurant", example = "507f1f77bcf86cd799439011", type = "string")
@@ -37,60 +40,13 @@ public class RestaurantDTO {
         this.spaces = new ArrayList<>();
     }
 
-    public RestaurantDTO(String id, String name, String address, String cuisineType, Integer capacity, List<SpaceDTO> spaces) {
+    public RestaurantDTO(String id, String name, String address, String cuisineType, Integer capacity,
+        List<SpaceDTO> spaces) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.cuisineType = cuisineType;
         this.capacity = capacity;
         this.spaces = spaces != null ? spaces : new ArrayList<>();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getCuisineType() {
-        return cuisineType;
-    }
-
-    public void setCuisineType(String cuisineType) {
-        this.cuisineType = cuisineType;
-    }
-
-    public Integer getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(Integer capacity) {
-        this.capacity = capacity;
-    }
-
-    public List<SpaceDTO> getSpaces() {
-        return spaces;
-    }
-
-    public void setSpaces(List<SpaceDTO> spaces) {
-        this.spaces = spaces;
     }
 }
