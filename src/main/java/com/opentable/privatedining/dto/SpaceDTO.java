@@ -13,6 +13,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Data Transfer Object for Space entity.
+ * Used for API request and response payloads with validation annotations.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -50,12 +54,27 @@ public class SpaceDTO {
     @Schema(description = "Time slot duration in minutes for reservations (defaults to 60 if not set)", example = "60")
     private Integer timeSlotDurationMinutes;
 
+    /**
+     * Constructs a SpaceDTO with basic details.
+     *
+     * @param name the name of the space
+     * @param minCapacity the minimum capacity
+     * @param maxCapacity the maximum capacity
+     */
     public SpaceDTO(String name, Integer minCapacity, Integer maxCapacity) {
         this.name = name;
         this.minCapacity = minCapacity;
         this.maxCapacity = maxCapacity;
     }
 
+    /**
+     * Constructs a SpaceDTO with ID and basic details.
+     *
+     * @param id the unique identifier
+     * @param name the name of the space
+     * @param minCapacity the minimum capacity
+     * @param maxCapacity the maximum capacity
+     */
     public SpaceDTO(UUID id, String name, Integer minCapacity, Integer maxCapacity) {
         this.id = id;
         this.name = name;

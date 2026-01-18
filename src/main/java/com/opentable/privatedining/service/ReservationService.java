@@ -21,6 +21,9 @@ import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.repository.ReservationRepository;
 
+/**
+ * Service class for managing reservation operations.
+ */
 @Service
 public class ReservationService {
 
@@ -28,6 +31,13 @@ public class ReservationService {
     private final RestaurantService restaurantService;
     private final CapacityValidationService capacityValidationService;
 
+    /**
+     * Constructs a new ReservationService with the required dependencies.
+     *
+     * @param reservationRepository the repository for reservation data access
+     * @param restaurantService the service for restaurant operations
+     * @param capacityValidationService the service for capacity validation
+     */
     public ReservationService(ReservationRepository reservationRepository,
                               RestaurantService restaurantService,
                               CapacityValidationService capacityValidationService) {
@@ -36,14 +46,40 @@ public class ReservationService {
         this.capacityValidationService = capacityValidationService;
     }
 
+    /**
+     * Retrieves all reservations.
+     *
+     * @return list of all reservations
+     */
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
+    /**
+     * Retrieves a reservation by its ID.
+     *
+     * @param id the reservation ID
+     * @return optional containing the reservation if found
+     */
     public Optional<Reservation> getReservationById(ObjectId id) {
         return reservationRepository.findById(id);
     }
 
+    /**
+     * Creates a new reservation with validation.
+     * Validates restaurant and space existence, operating hours, party size, and capacity.
+     * Automatically aligns reservation times to time slot boundaries.
+     *
+     * @param reservation the reservation to create
+     * @return the created reservation
+     * @throws RestaurantNotFoundException if the restaurant doesn't exist
+     * @throws SpaceNotFoundException if the space doesn't exist
+     * @throws MultiDayReservationException if reservation spans multiple days
+     * @throws InvalidReservationDurationException if duration is less than minimum slot duration
+     * @throws OutsideOperatingHoursException if reservation is outside operating hours
+     * @throws InvalidPartySizeException if party size exceeds space capacity
+     * @throws com.opentable.privatedining.exception.CapacityExceededException if combined capacity would be exceeded
+     */
     public Reservation createReservation(Reservation reservation) {
         // Validate that the restaurant exists
         Optional<com.opentable.privatedining.model.Restaurant> restaurantOpt =
@@ -104,6 +140,12 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    /**
+     * Deletes a reservation by its ID.
+     *
+     * @param id the reservation ID
+     * @return true if the reservation was deleted, false if not found
+     */
     public boolean deleteReservation(ObjectId id) {
         Optional<Reservation> existingReservation = reservationRepository.findById(id);
         if (existingReservation.isPresent()) {
@@ -113,12 +155,25 @@ public class ReservationService {
         return false;
     }
 
+    /**
+     * Retrieves all reservations for a specific restaurant.
+     *
+     * @param restaurantId the restaurant ID
+     * @return list of reservations for the restaurant
+     */
     public List<Reservation> getReservationsByRestaurant(ObjectId restaurantId) {
         return reservationRepository.findAll().stream()
             .filter(reservation -> reservation.getRestaurantId().equals(restaurantId))
-            .toList();
+                .toList();
     }
 
+    /**
+     * Retrieves all reservations for a specific space within a restaurant.
+     *
+     * @param restaurantId the restaurant ID
+     * @param spaceId the space UUID
+     * @return list of reservations for the space
+     */
     public List<Reservation> getReservationsBySpace(ObjectId restaurantId, UUID spaceId) {
         return reservationRepository.findAll().stream()
             .filter(reservation -> reservation.getRestaurantId().equals(restaurantId) &&

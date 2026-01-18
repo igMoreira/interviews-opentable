@@ -9,6 +9,9 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * Represents a reservation in the private dining system.
+ */
 @NoArgsConstructor
 @Getter
 @Setter
@@ -25,6 +28,17 @@ public class Reservation {
     private Integer partySize;
     private String status;
 
+    /**
+     * Constructs a new Reservation with the specified details.
+     *
+     * @param restaurantId the ID of the restaurant
+     * @param spaceId the UUID of the space being reserved
+     * @param customerEmail the email address of the customer
+     * @param startTime the start time of the reservation
+     * @param endTime the end time of the reservation
+     * @param partySize the number of people in the party
+     * @param status the status of the reservation
+     */
     public Reservation(ObjectId restaurantId, UUID spaceId, String customerEmail, LocalDateTime startTime,
         LocalDateTime endTime, Integer partySize, String status) {
         this.restaurantId = restaurantId;

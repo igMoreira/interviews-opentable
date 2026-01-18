@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * REST controller for managing reservations.
+ * Provides endpoints for creating, retrieving, and deleting reservations.
+ */
 @Validated
 @RestController
 @RequestMapping("/v1/reservations")
@@ -30,11 +34,22 @@ public class ReservationController {
     private final ReservationService reservationService;
     private final ReservationMapper reservationMapper;
 
+    /**
+     * Constructs a new ReservationController with the required dependencies.
+     *
+     * @param reservationService the service for reservation operations
+     * @param reservationMapper the mapper for reservation entity/DTO conversion
+     */
     public ReservationController(ReservationService reservationService, ReservationMapper reservationMapper) {
         this.reservationService = reservationService;
         this.reservationMapper = reservationMapper;
     }
 
+    /**
+     * Retrieves all reservations.
+     *
+     * @return list of all reservations as DTOs
+     */
     @GetMapping
     @Operation(summary = "Get all reservations", description = "Retrieve a list of all reservations")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of reservations",
@@ -46,6 +61,12 @@ public class ReservationController {
                 .toList();
     }
 
+    /**
+     * Retrieves a reservation by its ID.
+     *
+     * @param id the reservation ID
+     * @return the reservation if found, or appropriate error response
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get reservation by ID", description = "Retrieve a reservation by its unique identifier")
     @ApiResponses(value = {
@@ -67,6 +88,12 @@ public class ReservationController {
         }
     }
 
+    /**
+     * Creates a new reservation.
+     *
+     * @param reservationDTO the reservation data to create
+     * @return the created reservation with HTTP 201 status
+     */
     @PostMapping
     @Operation(summary = "Create new reservation", description = "Create a new reservation in the system")
     @ApiResponses(value = {
@@ -84,6 +111,12 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationMapper.toDTO(savedReservation));
     }
 
+    /**
+     * Deletes a reservation by its ID.
+     *
+     * @param id the reservation ID to delete
+     * @return HTTP 204 if deleted, or appropriate error response
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete reservation", description = "Delete a reservation by its ID")
     @ApiResponses(value = {

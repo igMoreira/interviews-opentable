@@ -30,6 +30,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * REST controller for managing restaurants and their spaces.
+ * Provides endpoints for CRUD operations on restaurants, space management,
+ * and occupancy analytics reporting.
+ */
 @RestController
 @RequestMapping("/v1/restaurants")
 @Tag(name = "Restaurant", description = "Restaurant management API")
@@ -41,6 +46,14 @@ public class RestaurantController {
     private final RestaurantMapper restaurantMapper;
     private final SpaceMapper spaceMapper;
 
+    /**
+     * Constructs a new RestaurantController with the required dependencies.
+     *
+     * @param restaurantService the service for restaurant operations
+     * @param occupancyAnalyticsService the service for occupancy analytics
+     * @param restaurantMapper the mapper for restaurant entity/DTO conversion
+     * @param spaceMapper the mapper for space entity/DTO conversion
+     */
     public RestaurantController(RestaurantService restaurantService,
                                 OccupancyAnalyticsService occupancyAnalyticsService,
                                 RestaurantMapper restaurantMapper,
@@ -51,6 +64,11 @@ public class RestaurantController {
         this.spaceMapper = spaceMapper;
     }
 
+    /**
+     * Retrieves all restaurants.
+     *
+     * @return list of all restaurants as DTOs
+     */
     @GetMapping
     @Operation(summary = "Get all restaurants", description = "Retrieve a list of all restaurants")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of restaurants",
@@ -62,6 +80,12 @@ public class RestaurantController {
                 .toList();
     }
 
+    /**
+     * Retrieves a restaurant by its ID.
+     *
+     * @param id the restaurant ID
+     * @return the restaurant if found, or appropriate error response
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Retrieve a restaurant by its unique identifier")
     @ApiResponses(value = {
@@ -82,6 +106,12 @@ public class RestaurantController {
         }
     }
 
+    /**
+     * Creates a new restaurant.
+     *
+     * @param restaurantDTO the restaurant data to create
+     * @return the created restaurant with HTTP 201 status
+     */
     @PostMapping
     @Operation(summary = "Create new restaurant", description = "Create a new restaurant in the system")
     @ApiResponses(value = {
@@ -97,6 +127,13 @@ public class RestaurantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(restaurantMapper.toDTO(savedRestaurant));
     }
 
+    /**
+     * Updates an existing restaurant.
+     *
+     * @param id the restaurant ID to update
+     * @param restaurantDTO the updated restaurant data
+     * @return the updated restaurant if found, or appropriate error response
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Update restaurant", description = "Update an existing restaurant by its ID")
     @ApiResponses(value = {
@@ -121,6 +158,12 @@ public class RestaurantController {
         }
     }
 
+    /**
+     * Deletes a restaurant by its ID.
+     *
+     * @param id the restaurant ID to delete
+     * @return HTTP 204 if deleted, or appropriate error response
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete restaurant", description = "Delete a restaurant by its ID")
     @ApiResponses(value = {
@@ -140,6 +183,13 @@ public class RestaurantController {
         }
     }
 
+    /**
+     * Adds a new space to a restaurant.
+     *
+     * @param id the restaurant ID
+     * @param spaceDTO the space data to add
+     * @return the updated restaurant if found, or appropriate error response
+     */
     @PostMapping("/{id}/spaces")
     @Operation(summary = "Add space to restaurant", description = "Add a new space to a restaurant")
     @ApiResponses(value = {
@@ -164,6 +214,13 @@ public class RestaurantController {
         }
     }
 
+    /**
+     * Removes a space from a restaurant.
+     *
+     * @param id the restaurant ID
+     * @param spaceId the UUID of the space to remove
+     * @return the updated restaurant if found, or appropriate error response
+     */
     @DeleteMapping("/{id}/spaces/{spaceId}")
     @Operation(summary = "Remove space from restaurant", description = "Remove a space from a restaurant")
     @ApiResponses(value = {
@@ -188,6 +245,17 @@ public class RestaurantController {
         }
     }
 
+    /**
+     * Generates an occupancy analytics report for a restaurant.
+     *
+     * @param id the restaurant ID
+     * @param startTime the start of the report period
+     * @param endTime the end of the report period
+     * @param spaceId optional space ID to filter the report
+     * @param page the page number (0-based)
+     * @param size the page size
+     * @return the occupancy report response
+     */
     @GetMapping("/{id}/analytics/occupancy")
     @Operation(summary = "Get occupancy analytics report",
             description = "Generate an analytical report of occupancy levels for a restaurant within a specified date/time range. " +

@@ -5,6 +5,10 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configuration class for analytics settings.
+ * Configures time slot duration and maximum date range for occupancy reports.
+ */
 @Getter
 @Setter
 @Configuration

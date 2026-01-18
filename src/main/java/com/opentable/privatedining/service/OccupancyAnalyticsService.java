@@ -34,6 +34,13 @@ public class OccupancyAnalyticsService {
     private final RestaurantRepository restaurantRepository;
     private final AnalyticsConfig analyticsConfig;
 
+    /**
+     * Constructs a new OccupancyAnalyticsService with the required dependencies.
+     *
+     * @param reservationRepository the repository for reservation data access
+     * @param restaurantRepository the repository for restaurant data access
+     * @param analyticsConfig the configuration for analytics settings
+     */
     public OccupancyAnalyticsService(ReservationRepository reservationRepository,
                                       RestaurantRepository restaurantRepository,
                                       AnalyticsConfig analyticsConfig) {

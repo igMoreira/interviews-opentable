@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Repository interface for Reservation entities.
+ */
 @Repository
 public interface ReservationRepository extends MongoRepository<Reservation, ObjectId> {
 

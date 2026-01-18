@@ -6,6 +6,10 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Data transfer object for loading initial data from YAML configuration.
+ * Contains collections of restaurants and reservations to be loaded into the database.
+ */
 @Getter
 @Setter
 public class Data {

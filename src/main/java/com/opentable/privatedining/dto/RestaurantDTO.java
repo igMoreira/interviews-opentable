@@ -11,6 +11,10 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Data Transfer Object for Restaurant entity.
+ * Used for API request and response payloads.
+ */
 @Getter
 @Setter
 public class RestaurantDTO {
@@ -42,10 +46,21 @@ public class RestaurantDTO {
     @Schema(description = "List of spaces available in the restaurant")
     private List<SpaceDTO> spaces;
 
+    /**
+     * Default constructor that initializes an empty list of spaces.
+     */
     public RestaurantDTO() {
         this.spaces = new ArrayList<>();
     }
 
+    /**
+     * Constructs a RestaurantDTO with the specified details.
+     *
+     * @param name the name of the restaurant
+     * @param address the address of the restaurant
+     * @param cuisineType the type of cuisine served
+     * @param capacity the total capacity of the restaurant
+     */
     public RestaurantDTO(String name, String address, String cuisineType, Integer capacity) {
         this.name = name;
         this.address = address;
@@ -54,6 +69,16 @@ public class RestaurantDTO {
         this.spaces = new ArrayList<>();
     }
 
+    /**
+     * Constructs a RestaurantDTO with all fields.
+     *
+     * @param id the unique identifier
+     * @param name the name of the restaurant
+     * @param address the address of the restaurant
+     * @param cuisineType the type of cuisine served
+     * @param capacity the total capacity of the restaurant
+     * @param spaces the list of spaces in the restaurant
+     */
     public RestaurantDTO(String id, String name, String address, String cuisineType, Integer capacity,
         List<SpaceDTO> spaces) {
         this.id = id;

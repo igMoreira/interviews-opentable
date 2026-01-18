@@ -14,6 +14,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Data Transfer Object for Reservation entity.
+ * Used for API request and response payloads with validation annotations.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -57,6 +61,17 @@ public class ReservationDTO {
     @Schema(description = "Status of the reservation", example = "CONFIRMED")
     private String status;
 
+    /**
+     * Constructs a ReservationDTO with all fields.
+     *
+     * @param restaurantId the ID of the restaurant
+     * @param spaceId the UUID of the space being reserved
+     * @param customerEmail the email address of the customer
+     * @param startTime the start time of the reservation
+     * @param endTime the end time of the reservation
+     * @param partySize the number of people in the party
+     * @param status the status of the reservation
+     */
     public ReservationDTO(String restaurantId, UUID spaceId, String customerEmail, LocalDateTime startTime,
         LocalDateTime endTime, Integer partySize, String status) {
         this.restaurantId = restaurantId;

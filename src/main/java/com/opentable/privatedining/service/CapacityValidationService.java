@@ -20,6 +20,11 @@ public class CapacityValidationService {
 
     private final ReservationRepository reservationRepository;
 
+    /**
+     * Constructs a new CapacityValidationService with the required repository.
+     *
+     * @param reservationRepository the repository for reservation data access
+     */
     public CapacityValidationService(ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
     }

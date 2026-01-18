@@ -15,9 +15,19 @@ import org.springframework.context.annotation.Primary;
 
 import java.io.IOException;
 
+/**
+ * Configuration for Jackson ObjectMapper customization.
+ * Configures custom serializers and deserializers for ObjectId and Java 8 time types.
+ */
 @Configuration
 public class JacksonConfig {
 
+    /**
+     * Creates and configures the primary ObjectMapper bean.
+     * Registers custom serializers for ObjectId and Java 8 time types.
+     *
+     * @return configured ObjectMapper instance
+     */
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
