@@ -969,4 +969,186 @@ class ReservationServiceTest {
         reservation.setStatus("CONFIRMED");
         return reservation;
     }
+
+    // ==================== Additional Branch Coverage Tests ====================
+
+    @Test
+    void createReservation_WhenEndTimeAlreadyAlignedExactly_ShouldRemainUnchanged() {
+        // Given: End time already perfectly aligned (no seconds, no nanos, on slot boundary)
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Start and end times that are already perfectly aligned to 60-min slots
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0, 0, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0, 0, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        // Times should remain unchanged since they're already aligned
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0, 0, 0), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 14, 0, 0, 0), result.getEndTime());
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenEndTimeHasSecondsButMinuteAligned_ShouldRoundUp() {
+        // Given: End time with remainder 0 but has seconds (should still round up)
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0, 0, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0, 30, 0); // Has seconds
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        // End time should round up to next slot because of the seconds
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0, 0, 0), result.getEndTime());
+    }
+
+    @Test
+    void createReservation_WhenEndTimeHasNanosButOtherwiseAligned_ShouldRoundUp() {
+        // Given: End time with remainder 0, no seconds, but has nanos
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0, 0, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0, 0, 1); // Has nanos
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        // End time should round up to next slot because of the nanos
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0, 0, 0), result.getEndTime());
+    }
+
+    @Test
+    void getReservationsBySpace_WhenRestaurantDoesNotMatch_ShouldShortCircuit() {
+        // Given: Reservations where first condition (restaurantId match) fails
+        ObjectId targetRestaurantId = new ObjectId();
+        ObjectId otherRestaurantId = new ObjectId();
+        UUID targetSpaceId = UUID.randomUUID();
+
+        // Reservation belongs to a different restaurant - should short-circuit (not evaluate spaceId)
+        Reservation reservationDifferentRestaurant = createTestReservation("customer@example.com", 4);
+        reservationDifferentRestaurant.setRestaurantId(otherRestaurantId);
+        reservationDifferentRestaurant.setSpaceId(targetSpaceId); // Same space ID but different restaurant
+
+        when(reservationRepository.findAll()).thenReturn(List.of(reservationDifferentRestaurant));
+
+        // When
+        List<Reservation> result = reservationService.getReservationsBySpace(targetRestaurantId, targetSpaceId);
+
+        // Then
+        assertTrue(result.isEmpty());
+        verify(reservationRepository).findAll();
+    }
+
+    @Test
+    void getReservationsBySpace_WhenRestaurantMatchesButSpaceDoesNot_ShouldExclude() {
+        // Given: Reservation where restaurantId matches but spaceId does not
+        ObjectId restaurantId = new ObjectId();
+        UUID targetSpaceId = UUID.randomUUID();
+        UUID otherSpaceId = UUID.randomUUID();
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(otherSpaceId); // Different space
+
+        when(reservationRepository.findAll()).thenReturn(List.of(reservation));
+
+        // When
+        List<Reservation> result = reservationService.getReservationsBySpace(restaurantId, targetSpaceId);
+
+        // Then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getReservationsBySpace_WithMixedReservations_ShouldFilterCorrectly() {
+        // Given: Mix of reservations - some match both conditions, some only one
+        ObjectId restaurantId = new ObjectId();
+        ObjectId otherRestaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        UUID otherSpaceId = UUID.randomUUID();
+
+        // Matches both restaurant and space
+        Reservation matchingReservation = createTestReservation("match@example.com", 4);
+        matchingReservation.setRestaurantId(restaurantId);
+        matchingReservation.setSpaceId(spaceId);
+
+        // Matches restaurant but not space
+        Reservation wrongSpace = createTestReservation("wrongspace@example.com", 4);
+        wrongSpace.setRestaurantId(restaurantId);
+        wrongSpace.setSpaceId(otherSpaceId);
+
+        // Matches space but not restaurant (short-circuits on first condition)
+        Reservation wrongRestaurant = createTestReservation("wrongrestaurant@example.com", 4);
+        wrongRestaurant.setRestaurantId(otherRestaurantId);
+        wrongRestaurant.setSpaceId(spaceId);
+
+        when(reservationRepository.findAll()).thenReturn(List.of(matchingReservation, wrongSpace, wrongRestaurant));
+
+        // When
+        List<Reservation> result = reservationService.getReservationsBySpace(restaurantId, spaceId);
+
+        // Then
+        assertEquals(1, result.size());
+        assertEquals("match@example.com", result.get(0).getCustomerEmail());
+    }
 }
