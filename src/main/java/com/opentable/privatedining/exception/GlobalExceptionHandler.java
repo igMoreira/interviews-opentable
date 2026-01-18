@@ -80,6 +80,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidDateRangeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidDateRange(
+            InvalidDateRangeException ex, WebRequest request) {
+        logger.warn("Invalid date range: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex, WebRequest request) {

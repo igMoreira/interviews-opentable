@@ -1,11 +1,13 @@
 package com.opentable.privatedining.controller;
 
+import com.opentable.privatedining.dto.OccupancyReportResponse;
 import com.opentable.privatedining.dto.RestaurantDTO;
 import com.opentable.privatedining.dto.SpaceDTO;
 import com.opentable.privatedining.mapper.RestaurantMapper;
 import com.opentable.privatedining.mapper.SpaceMapper;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
+import com.opentable.privatedining.service.OccupancyAnalyticsService;
 import com.opentable.privatedining.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,10 +17,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.bson.types.ObjectId;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,11 +34,16 @@ import java.util.UUID;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final OccupancyAnalyticsService occupancyAnalyticsService;
     private final RestaurantMapper restaurantMapper;
     private final SpaceMapper spaceMapper;
 
-    public RestaurantController(RestaurantService restaurantService, RestaurantMapper restaurantMapper, SpaceMapper spaceMapper) {
+    public RestaurantController(RestaurantService restaurantService,
+                                OccupancyAnalyticsService occupancyAnalyticsService,
+                                RestaurantMapper restaurantMapper,
+                                SpaceMapper spaceMapper) {
         this.restaurantService = restaurantService;
+        this.occupancyAnalyticsService = occupancyAnalyticsService;
         this.restaurantMapper = restaurantMapper;
         this.spaceMapper = spaceMapper;
     }
@@ -174,5 +183,35 @@ public class RestaurantController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @GetMapping("/{id}/analytics/occupancy")
+    @Operation(summary = "Get occupancy analytics report",
+            description = "Generate an analytical report of occupancy levels for a restaurant within a specified date/time range. " +
+                    "Returns hourly breakdown of occupancy per space with utilization metrics.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Occupancy report generated successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = OccupancyReportResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters (invalid date range, exceeds max 31 days, or invalid ID format)"),
+            @ApiResponse(responseCode = "404", description = "Restaurant or space not found")
+    })
+    public ResponseEntity<OccupancyReportResponse> getOccupancyReport(
+            @Parameter(description = "ID of the restaurant", required = true)
+            @PathVariable String id,
+            @Parameter(description = "Start of the report period (ISO date-time format)", required = true, example = "2026-01-20T09:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @Parameter(description = "End of the report period (ISO date-time format)", required = true, example = "2026-01-20T18:00:00")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @Parameter(description = "Optional space ID to filter the report to a single space")
+            @RequestParam(required = false) UUID spaceId,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "10") int size) {
+
+        ObjectId restaurantId = new ObjectId(id);
+        OccupancyReportResponse report = occupancyAnalyticsService.generateOccupancyReport(
+                restaurantId, startTime, endTime, spaceId, page, size);
+        return ResponseEntity.ok(report);
     }
 }

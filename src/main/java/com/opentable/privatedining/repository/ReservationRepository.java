@@ -20,4 +20,20 @@ public interface ReservationRepository extends MongoRepository<Reservation, Obje
     @Query("{ 'restaurantId': ?0, 'spaceId': ?1, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
     List<Reservation> findOverlappingReservations(ObjectId restaurantId, UUID spaceId,
                                                    LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Find all reservations for a restaurant within a date/time range.
+     * Used for occupancy analytics reporting.
+     */
+    @Query("{ 'restaurantId': ?0, 'startTime': { $lt: ?2 }, 'endTime': { $gt: ?1 } }")
+    List<Reservation> findByRestaurantIdAndTimeRange(ObjectId restaurantId,
+                                                      LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Find all reservations for a specific space within a date/time range.
+     * Used for occupancy analytics reporting with space filtering.
+     */
+    @Query("{ 'restaurantId': ?0, 'spaceId': ?1, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
+    List<Reservation> findByRestaurantIdAndSpaceIdAndTimeRange(ObjectId restaurantId, UUID spaceId,
+                                                                LocalDateTime startTime, LocalDateTime endTime);
 }

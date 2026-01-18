@@ -13,6 +13,9 @@ private-dining:
       operating-start-time: "09:00"
       operating-end-time: "22:00"
       time-slot-duration-minutes: 60
+  analytics:
+    time-slot-duration-minutes: 60
+    max-range-days: 31
 
 # Embedded MongoDB Configuration
 de:

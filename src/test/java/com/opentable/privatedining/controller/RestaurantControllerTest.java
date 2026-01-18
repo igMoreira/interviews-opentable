@@ -7,6 +7,7 @@ import com.opentable.privatedining.mapper.RestaurantMapper;
 import com.opentable.privatedining.mapper.SpaceMapper;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
+import com.opentable.privatedining.service.OccupancyAnalyticsService;
 import com.opentable.privatedining.service.RestaurantService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class RestaurantControllerTest {
 
     @MockBean
     private RestaurantService restaurantService;
+
+    @MockBean
+    private OccupancyAnalyticsService occupancyAnalyticsService;
 
     @MockBean
     private RestaurantMapper restaurantMapper;

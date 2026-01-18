@@ -9,6 +9,10 @@ public class SpaceNotFoundException extends RuntimeException {
         super("Space not found with ID: " + spaceId.toString() + " in restaurant: " + restaurantId.toString());
     }
 
+    public SpaceNotFoundException(UUID spaceId) {
+        super("Space not found with ID: " + spaceId.toString());
+    }
+
     public SpaceNotFoundException(String message) {
         super(message);
     }
