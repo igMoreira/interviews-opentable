@@ -64,6 +64,42 @@ class OccupancyAnalyticsServiceTest {
     // ==================== Date Range Validation Tests ====================
 
     @Test
+    void generateOccupancyReport_WhenStartTimeIsNull_ShouldThrowException() {
+        // Given
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 18, 0);
+
+        // When & Then
+        InvalidDateRangeException exception = assertThrows(InvalidDateRangeException.class,
+                () -> occupancyAnalyticsService.generateOccupancyReport(
+                        restaurantId, null, endTime, null, 0, 10));
+
+        assertTrue(exception.getMessage().contains("Start time and end time are required"));
+    }
+
+    @Test
+    void generateOccupancyReport_WhenEndTimeIsNull_ShouldThrowException() {
+        // Given
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
+
+        // When & Then
+        InvalidDateRangeException exception = assertThrows(InvalidDateRangeException.class,
+                () -> occupancyAnalyticsService.generateOccupancyReport(
+                        restaurantId, startTime, null, null, 0, 10));
+
+        assertTrue(exception.getMessage().contains("Start time and end time are required"));
+    }
+
+    @Test
+    void generateOccupancyReport_WhenBothTimesAreNull_ShouldThrowException() {
+        // When & Then
+        InvalidDateRangeException exception = assertThrows(InvalidDateRangeException.class,
+                () -> occupancyAnalyticsService.generateOccupancyReport(
+                        restaurantId, null, null, null, 0, 10));
+
+        assertTrue(exception.getMessage().contains("Start time and end time are required"));
+    }
+
+    @Test
     void generateOccupancyReport_WhenEndTimeBeforeStartTime_ShouldThrowException() {
         // Given
         LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 18, 0);
@@ -237,6 +273,28 @@ class OccupancyAnalyticsServiceTest {
         assertEquals(space2.getId(), response.getSpaceReports().get(0).getSpaceId());
     }
 
+    @Test
+    void generateOccupancyReport_WithPaginationBeyondTotal_ShouldReturnEmptyResults() {
+        // Given - page beyond available data
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 12, 0);
+
+        when(analyticsConfig.getMaxRangeDays()).thenReturn(31);
+        when(analyticsConfig.getTimeSlotDurationMinutes()).thenReturn(60);
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findByRestaurantIdAndTimeRange(eq(restaurantId), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // When - request page 10 which doesn't exist (only 2 spaces)
+        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+                restaurantId, startTime, endTime, null, 10, 10);
+
+        // Then
+        assertEquals(10, response.getPage());
+        assertEquals(0, response.getSpaceReports().size());
+        assertEquals(2, response.getTotalElements());
+    }
+
     // ==================== Occupancy Calculation Tests ====================
 
     @Test
@@ -372,6 +430,37 @@ class OccupancyAnalyticsServiceTest {
         // Then
         assertEquals(2, response.getSummary().getTotalReservations());
         assertEquals(15, response.getSummary().getTotalGuests()); // 10 + 5
+    }
+
+    @Test
+    void generateOccupancyReport_WithZeroCapacitySpace_ShouldHandleGracefully() {
+        // Given - edge case where space has zero capacity (utilization calculation)
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 10, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 11, 0);
+
+        // Create a space with zero max capacity
+        Space zeroCapacitySpace = new Space("Zero Room", 0, 0);
+        zeroCapacitySpace.setId(UUID.randomUUID());
+
+        Restaurant testRestaurant = new Restaurant("Test Restaurant", "123 Main St", "Italian", 100);
+        testRestaurant.setId(restaurantId);
+        testRestaurant.setSpaces(List.of(zeroCapacitySpace));
+
+        when(analyticsConfig.getMaxRangeDays()).thenReturn(31);
+        when(analyticsConfig.getTimeSlotDurationMinutes()).thenReturn(60);
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(testRestaurant));
+        when(reservationRepository.findByRestaurantIdAndTimeRange(eq(restaurantId), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+                restaurantId, startTime, endTime, null, 0, 10);
+
+        // Then - should not throw division by zero, utilization should be 0
+        assertNotNull(response);
+        assertEquals(1, response.getSpaceReports().size());
+        SpaceOccupancyReport spaceReport = response.getSpaceReports().get(0);
+        assertEquals(0.0, spaceReport.getAverageUtilization(), 0.01);
     }
 
     // ==================== Helper Methods ====================
