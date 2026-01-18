@@ -52,6 +52,20 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(OutsideOperatingHoursException.class)
+    public ResponseEntity<Map<String, Object>> handleOutsideOperatingHours(
+            OutsideOperatingHoursException ex, WebRequest request) {
+        logger.warn("Outside operating hours: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MultiDayReservationException.class)
+    public ResponseEntity<Map<String, Object>> handleMultiDayReservation(
+            MultiDayReservationException ex, WebRequest request) {
+        logger.warn("Multi-day reservation: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex, WebRequest request) {

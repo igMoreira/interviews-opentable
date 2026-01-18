@@ -1,6 +1,8 @@
 package com.opentable.privatedining.service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.MultiDayReservationException;
+import com.opentable.privatedining.exception.OutsideOperatingHoursException;
 import com.opentable.privatedining.exception.ReservationConflictException;
 import com.opentable.privatedining.exception.ReservationNotFoundException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
@@ -16,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+//TODO: Increase test coverage
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
 
@@ -335,6 +339,202 @@ class ReservationServiceTest {
         assertEquals("customer1@example.com", result.get(0).getCustomerEmail());
         assertEquals("customer3@example.com", result.get(1).getCustomerEmail());
         verify(reservationRepository).findAll();
+    }
+
+    @Test
+    void createReservation_WhenMultiDayReservation_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 18, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 21, 10, 0); // Next day
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(MultiDayReservationException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenStartTimeBeforeOperatingHours_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // 8:00 AM - before default operating hours (9:00 AM)
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 8, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 10, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(OutsideOperatingHoursException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenEndTimeAfterOperatingHours_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Ends at 11:00 PM - after default operating hours (10:00 PM)
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 20, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 23, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(OutsideOperatingHoursException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenWithinOperatingHours_ShouldSucceed() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Within operating hours (9:00 AM - 10:00 PM)
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(reservation)).thenReturn(savedReservation);
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        verify(reservationRepository).save(reservation);
+    }
+
+    @Test
+    void createReservation_WhenWithinCustomOperatingHours_ShouldSucceed() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Space with custom operating hours: 6:00 AM - 11:00 PM
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 6, 30);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 8, 30);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setOperatingStartTime(LocalTime.of(6, 0));
+        space.setOperatingEndTime(LocalTime.of(23, 0));
+        restaurant.setSpaces(List.of(space));
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(reservation)).thenReturn(savedReservation);
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        verify(reservationRepository).save(reservation);
+    }
+
+    @Test
+    void createReservation_WhenOutsideCustomOperatingHours_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Space with custom operating hours: 10:00 AM - 6:00 PM
+        // Reservation is at 7:00 PM - outside custom hours
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 19, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 21, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setOperatingStartTime(LocalTime.of(10, 0));
+        space.setOperatingEndTime(LocalTime.of(18, 0));
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(OutsideOperatingHoursException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+        verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
     private Reservation createTestReservation(String customerEmail, int partySize) {

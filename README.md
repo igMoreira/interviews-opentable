@@ -7,3 +7,5 @@ Repository for the Private Dining Java take home test
 
 ## Running the project
 The project can be started using `mvn spring-boot:run`, and runs with an embedded instance of MongoDB
+
+TODO: Improve readme with all changes done and diagrams explaining the architecture

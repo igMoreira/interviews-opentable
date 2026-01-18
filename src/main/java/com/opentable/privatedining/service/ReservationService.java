@@ -1,6 +1,7 @@
 package com.opentable.privatedining.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.MultiDayReservationException;
+import com.opentable.privatedining.exception.OutsideOperatingHoursException;
 import com.opentable.privatedining.exception.ReservationConflictException;
 import com.opentable.privatedining.exception.ReservationNotFoundException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
@@ -47,12 +50,32 @@ public class ReservationService {
             throw new RestaurantNotFoundException(reservation.getRestaurantId());
         }
 
+        //validate that the space exists within the restaurant
         Restaurant restaurant = restaurantOpt.get();
         Space space = restaurant.getSpaces().stream().filter(s -> s.getId().equals(reservation.getSpaceId()))
             .findFirst()
             .orElseThrow(() -> new SpaceNotFoundException(reservation.getRestaurantId(), reservation.getSpaceId()));
 
+        // Validate that reservation does not span multiple days
+        if (!reservation.getStartTime().toLocalDate().equals(reservation.getEndTime().toLocalDate())) {
+            throw new MultiDayReservationException(
+                reservation.getStartTime().toLocalDate(),
+                reservation.getEndTime().toLocalDate());
+        }
 
+        // Validate reservation is within operating hours
+        LocalTime reservationStartTime = reservation.getStartTime().toLocalTime();
+        LocalTime reservationEndTime = reservation.getEndTime().toLocalTime();
+        LocalTime operatingStart = space.getOperatingStartTime();
+        LocalTime operatingEnd = space.getOperatingEndTime();
+
+        if (reservationStartTime.isBefore(operatingStart) || reservationEndTime.isAfter(operatingEnd)) {
+            throw new OutsideOperatingHoursException(
+                reservationStartTime, reservationEndTime, operatingStart, operatingEnd);
+        }
+
+
+        //TODO: [Feature 1 - c] Check space capacity, but allow concurrent reservations up to max capacity.
         // Validate party size is within space capacity
         if (reservation.getPartySize() < space.getMinCapacity() ||
             reservation.getPartySize() > space.getMaxCapacity()) {
