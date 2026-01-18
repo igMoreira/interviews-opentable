@@ -13,6 +13,7 @@ import com.opentable.privatedining.repository.RestaurantRepository;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -63,6 +64,7 @@ public class OccupancyAnalyticsService {
      * @throws RestaurantNotFoundException if the restaurant is not found
      * @throws SpaceNotFoundException if the specified space is not found
      */
+    @Cacheable(value = "occupancyReports", key = "{#restaurantId, #startTime, #endTime, #spaceId, #page, #size}")
     public OccupancyReportResponse generateOccupancyReport(
             ObjectId restaurantId,
             LocalDateTime startTime,

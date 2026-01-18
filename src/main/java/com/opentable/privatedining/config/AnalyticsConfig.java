@@ -17,5 +17,7 @@ public class AnalyticsConfig {
 
     private Integer timeSlotDurationMinutes = 60;
     private Integer maxRangeDays = 31;
+    private Integer cacheTtlMinutes = 10;
+    private Integer cacheMaxSize = 100;
 }
 

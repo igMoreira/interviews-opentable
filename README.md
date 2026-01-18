@@ -16,6 +16,9 @@ A comprehensive RESTful API for managing private dining reservations at restaura
   - [Reservation API](#reservation-api)
   - [Analytics API](#analytics-api)
 - [Technical Design](#technical-design)
+  - [Data Model](#data-model)
+  - [Reservation Validation Pipeline](#reservation-validation-pipeline)
+  - [Caching](#caching)
 - [Prerequisites](#prerequisites)
 - [Running the Project](#running-the-project)
 - [Testing & Coverage](#testing--coverage)
@@ -644,6 +647,82 @@ size=10"
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Caching
+
+The system implements a caching layer for occupancy analytics reports using **Caffeine**, a high-performance in-memory cache for Java.
+
+**Cache Configuration**:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `cache-ttl-minutes` | 10 | Time-to-live for cached reports |
+| `cache-max-size` | 100 | Maximum number of cached entries |
+
+**How It Works**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CACHING FLOW                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Analytics Request                                                         │
+│          │                                                                  │
+│          ▼                                                                  │
+│   ┌─────────────────┐     Cache Hit     ┌─────────────────────────────┐     │
+│   │  Check Cache    │──────────────────►│  Return Cached Response     │     │
+│   │  (Caffeine)     │                   └─────────────────────────────┘     │
+│   └────────┬────────┘                                                       │
+│            │ Cache Miss                                                     │
+│            ▼                                                                │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  Generate Report from Database                                      │   │
+│   │  • Fetch reservations                                               │   │
+│   │  • Calculate hourly breakdown                                       │   │
+│   │  • Compute utilization metrics                                      │   │
+│   └────────────────────────────┬────────────────────────────────────────┘   │
+│                                │                                            │
+│                                ▼                                            │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  Store in Cache & Return                                            │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│   ═══════════════════════════════════════════════════════════════════════   │
+│                                                                             │
+│   CACHE INVALIDATION                                                        │
+│                                                                             │
+│   ┌─────────────────┐          ┌─────────────────────────────────────────┐  │
+│   │ Create/Delete   │─────────►│  Evict ALL cached analytics reports    │  │
+│   │ Reservation     │          │  (ensures data consistency)            │  │
+│   └─────────────────┘          └─────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Cache Key Structure**:
+
+The cache key is a composite of all query parameters:
+- `restaurantId`
+- `startTime`
+- `endTime`
+- `spaceId` (optional)
+- `page`
+- `size`
+
+**Eviction Strategy**:
+
+When a reservation is created or deleted, **all** cached analytics reports are evicted (`allEntries=true`). This simple approach ensures data consistency while accepting a temporary performance cost after data modifications.
+
+**Configuration** (`application.yml`):
+
+```yaml
+private-dining:
+  analytics:
+    cache-ttl-minutes: 10      # Cache entries expire after 10 minutes
+    cache-max-size: 100        # Maximum 100 cached reports
+```
+
+> **Note for Multi-Instance Deployments**: The current implementation uses Caffeine, which is a local in-memory cache. For production deployments with multiple application instances, consider replacing Caffeine with a distributed cache such as **Redis** to ensure cache consistency across all nodes. This would require adding `spring-boot-starter-data-redis` and updating the `CacheConfig` to use `RedisCacheManager`.
+
 ---
 
 ## Prerequisites
@@ -770,6 +849,8 @@ private-dining:
   analytics:
     time-slot-duration-minutes: 60       # Analytics report granularity
     max-range-days: 31                   # Max days for analytics query
+    cache-ttl-minutes: 10                # Cache TTL for analytics reports
+    cache-max-size: 100                  # Max cached analytics entries
 
 # Server Configuration
 server:
@@ -783,7 +864,7 @@ server:
 1. **Multi-window operating hours** - Support for lunch/dinner breaks
 2. **Day-of-week variations** - Different hours per day
 3. **Table layout awareness** - Physical seating arrangements
-4. **Caching layer** - Redis for analytics and frequently accessed data
+4. **Distributed caching** - Redis for multi-instance deployments
 5. **Distributed locking** - Prevent race conditions on concurrent bookings
 6. **Event sourcing** - Full audit trail of reservation changes
 7. **Notification system** - Email/SMS confirmations and reminders

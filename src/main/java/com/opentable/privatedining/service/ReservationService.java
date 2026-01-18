@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.types.ObjectId;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
@@ -80,6 +81,7 @@ public class ReservationService {
      * @throws InvalidPartySizeException if party size exceeds space capacity
      * @throws com.opentable.privatedining.exception.CapacityExceededException if combined capacity would be exceeded
      */
+    @CacheEvict(value = "occupancyReports", allEntries = true)
     public Reservation createReservation(Reservation reservation) {
         // Validate that the restaurant exists
         Optional<com.opentable.privatedining.model.Restaurant> restaurantOpt =
@@ -146,6 +148,7 @@ public class ReservationService {
      * @param id the reservation ID
      * @return true if the reservation was deleted, false if not found
      */
+    @CacheEvict(value = "occupancyReports", allEntries = true)
     public boolean deleteReservation(ObjectId id) {
         Optional<Reservation> existingReservation = reservationRepository.findById(id);
         if (existingReservation.isPresent()) {
