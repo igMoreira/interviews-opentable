@@ -1,5 +1,6 @@
 package com.opentable.privatedining.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.InvalidReservationDurationException;
 import com.opentable.privatedining.exception.MultiDayReservationException;
 import com.opentable.privatedining.exception.OutsideOperatingHoursException;
 import com.opentable.privatedining.exception.ReservationConflictException;
@@ -63,7 +65,22 @@ public class ReservationService {
                 reservation.getEndTime().toLocalDate());
         }
 
-        // Validate reservation is within operating hours
+        // Align reservation times to time slots
+        int slotDuration = space.getTimeSlotDurationMinutes();
+        LocalDateTime alignedStartTime = alignStartTimeToNearestSlot(reservation.getStartTime(), slotDuration);
+        LocalDateTime alignedEndTime = alignEndTimeToSlotCeiling(reservation.getEndTime(), slotDuration);
+
+        // Ensure minimum reservation duration of one slot
+        long durationMinutes = Duration.between(alignedStartTime, alignedEndTime).toMinutes();
+        if (durationMinutes < slotDuration) {
+            throw new InvalidReservationDurationException(slotDuration);
+        }
+
+        // Update reservation with aligned times
+        reservation.setStartTime(alignedStartTime);
+        reservation.setEndTime(alignedEndTime);
+
+        // Validate reservation is within operating hours (after alignment)
         LocalTime reservationStartTime = reservation.getStartTime().toLocalTime();
         LocalTime reservationEndTime = reservation.getEndTime().toLocalTime();
         LocalTime operatingStart = space.getOperatingStartTime();
@@ -139,5 +156,44 @@ public class ReservationService {
     private boolean isTimeOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd,
                                       LocalDateTime newStart, LocalDateTime newEnd) {
         return newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart);
+    }
+
+    /**
+     * Aligns start time to the nearest slot boundary.
+     * Example with 60-min slots: 12:17 -> 12:00, 12:45 -> 13:00
+     */
+    private LocalDateTime alignStartTimeToNearestSlot(LocalDateTime time, int slotMinutes) {
+        int minute = time.getMinute();
+        int remainder = minute % slotMinutes;
+
+        LocalDateTime baseTime = time.withMinute(0).withSecond(0).withNano(0);
+        int slotStart = (minute / slotMinutes) * slotMinutes;
+
+        // Round to nearest: if past halfway point of slot, round up
+        if (remainder >= slotMinutes / 2.0) {
+            return baseTime.plusMinutes(slotStart + slotMinutes);
+        } else {
+            return baseTime.plusMinutes(slotStart);
+        }
+    }
+
+    /**
+     * Aligns end time by rounding up to the next slot boundary (ceiling).
+     * Example with 60-min slots: 14:10 -> 15:00, 14:00 -> 14:00 (already aligned)
+     */
+    private LocalDateTime alignEndTimeToSlotCeiling(LocalDateTime time, int slotMinutes) {
+        int minute = time.getMinute();
+        int remainder = minute % slotMinutes;
+
+        if (remainder == 0 && time.getSecond() == 0 && time.getNano() == 0) {
+            // Already aligned
+            return time;
+        }
+
+        LocalDateTime baseTime = time.withMinute(0).withSecond(0).withNano(0);
+        int slotStart = (minute / slotMinutes) * slotMinutes;
+
+        // Round up to next slot boundary
+        return baseTime.plusMinutes(slotStart + slotMinutes);
     }
 }

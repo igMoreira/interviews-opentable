@@ -66,6 +66,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidReservationDurationException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidReservationDuration(
+            InvalidReservationDurationException ex, WebRequest request) {
+        logger.warn("Invalid reservation duration: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex, WebRequest request) {

@@ -7,6 +7,7 @@ public class Space {
 
     private static final LocalTime DEFAULT_OPERATING_START = LocalTime.of(9, 0);
     private static final LocalTime DEFAULT_OPERATING_END = LocalTime.of(22, 0);
+    private static final Integer DEFAULT_TIME_SLOT_DURATION_MINUTES = 60;
 
     private UUID id;
     private String name;
@@ -14,6 +15,7 @@ public class Space {
     private Integer maxCapacity;
     private LocalTime operatingStartTime;
     private LocalTime operatingEndTime;
+    private Integer timeSlotDurationMinutes;
 
     public Space() {
         this.id = UUID.randomUUID();
@@ -72,6 +74,14 @@ public class Space {
 
     public void setOperatingEndTime(LocalTime operatingEndTime) {
         this.operatingEndTime = operatingEndTime;
+    }
+
+    public Integer getTimeSlotDurationMinutes() {
+        return timeSlotDurationMinutes != null ? timeSlotDurationMinutes : DEFAULT_TIME_SLOT_DURATION_MINUTES;
+    }
+
+    public void setTimeSlotDurationMinutes(Integer timeSlotDurationMinutes) {
+        this.timeSlotDurationMinutes = timeSlotDurationMinutes;
     }
 }
 

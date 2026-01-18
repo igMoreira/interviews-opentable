@@ -30,6 +30,9 @@ public class SpaceDTO {
     @Schema(description = "Operating end time for the space (defaults to 22:00 if not set)", example = "22:00", type = "string", pattern = "HH:mm")
     private LocalTime operatingEndTime;
 
+    @Schema(description = "Time slot duration in minutes for reservations (defaults to 60 if not set)", example = "60")
+    private Integer timeSlotDurationMinutes;
+
     public SpaceDTO() {}
 
     public SpaceDTO(String name, Integer minCapacity, Integer maxCapacity) {
@@ -91,5 +94,13 @@ public class SpaceDTO {
 
     public void setOperatingEndTime(LocalTime operatingEndTime) {
         this.operatingEndTime = operatingEndTime;
+    }
+
+    public Integer getTimeSlotDurationMinutes() {
+        return timeSlotDurationMinutes;
+    }
+
+    public void setTimeSlotDurationMinutes(Integer timeSlotDurationMinutes) {
+        this.timeSlotDurationMinutes = timeSlotDurationMinutes;
     }
 }

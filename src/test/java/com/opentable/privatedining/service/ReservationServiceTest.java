@@ -1,6 +1,7 @@
 package com.opentable.privatedining.service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.InvalidReservationDurationException;
 import com.opentable.privatedining.exception.MultiDayReservationException;
 import com.opentable.privatedining.exception.OutsideOperatingHoursException;
 import com.opentable.privatedining.exception.ReservationConflictException;
@@ -535,6 +536,251 @@ class ReservationServiceTest {
             reservationService.createReservation(reservation);
         });
         verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    // ==================== SLOT OPTIMIZATION TESTS ====================
+
+    @Test
+    void createReservation_WhenStartTimeNotAligned_ShouldRoundToNearestSlot_RoundDown() {
+        // Given: Request at 12:17 with 60-min slots should align to 12:00 (round down)
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 17);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 17);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0), result.getEndTime()); // End rounds up
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenStartTimeNotAligned_ShouldRoundToNearestSlot_RoundUp() {
+        // Given: Request at 12:45 with 60-min slots should align to 13:00 (round up)
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 45);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 45);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 13, 0), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0), result.getEndTime()); // End rounds up
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenTimesAlreadyAligned_ShouldRemainUnchanged() {
+        // Given: Request already on slot boundaries
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 14, 0), result.getEndTime());
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenDurationLessThanOneSlot_ShouldThrowException() {
+        // Given: After alignment, duration is less than one slot
+        // Start 12:45 rounds to 13:00, end 13:10 rounds to 14:00 => 60 min = OK
+        // Start 12:45 rounds to 13:00, end 13:00 stays at 13:00 => 0 min = FAIL
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 45); // Rounds to 13:00
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 13, 0);    // Already aligned, stays 13:00
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(InvalidReservationDurationException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WithCustom30MinSlots_ShouldAlignCorrectly() {
+        // Given: Request at 12:17 with 30-min slots should align to 12:15 (nearest is 12:00 or 12:30, 17 is closer to 30)
+        // Actually 17 min: remainder = 17, slotMinutes/2 = 15, 17 >= 15, so round up to 12:30
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 17);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 13, 17);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(30);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 30), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 13, 30), result.getEndTime());
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenEndTimeNotAligned_ShouldRoundUp() {
+        // Given: End time at 14:10 should round up to 15:00 with 60-min slots
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 10);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        space.setTimeSlotDurationMinutes(60);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0), result.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0), result.getEndTime());
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WithDefaultSlotDuration_ShouldUse60Minutes() {
+        // Given: Space without explicit slot duration should use default 60 minutes
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 20);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 20);
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        // Not setting timeSlotDurationMinutes - should default to 60
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0), result.getStartTime()); // 20 < 30, round down
+        assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0), result.getEndTime()); // Round up
+        verify(reservationRepository).save(any(Reservation.class));
     }
 
     private Reservation createTestReservation(String customerEmail, int partySize) {
