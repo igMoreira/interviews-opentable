@@ -52,6 +52,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(CapacityExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleCapacityExceeded(
+            CapacityExceededException ex, WebRequest request) {
+        logger.warn("Capacity exceeded: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(OutsideOperatingHoursException.class)
     public ResponseEntity<Map<String, Object>> handleOutsideOperatingHours(
             OutsideOperatingHoursException ex, WebRequest request) {

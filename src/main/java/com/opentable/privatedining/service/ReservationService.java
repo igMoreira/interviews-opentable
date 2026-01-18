@@ -8,15 +8,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.opentable.privatedining.exception.InvalidPartySizeException;
 import com.opentable.privatedining.exception.InvalidReservationDurationException;
 import com.opentable.privatedining.exception.MultiDayReservationException;
 import com.opentable.privatedining.exception.OutsideOperatingHoursException;
-import com.opentable.privatedining.exception.ReservationConflictException;
-import com.opentable.privatedining.exception.ReservationNotFoundException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
 import com.opentable.privatedining.exception.SpaceNotFoundException;
 import com.opentable.privatedining.model.Reservation;
@@ -28,12 +25,15 @@ import com.opentable.privatedining.repository.ReservationRepository;
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
-
     private final RestaurantService restaurantService;
+    private final CapacityValidationService capacityValidationService;
 
-    public ReservationService(ReservationRepository reservationRepository, RestaurantService restaurantService) {
+    public ReservationService(ReservationRepository reservationRepository,
+                              RestaurantService restaurantService,
+                              CapacityValidationService capacityValidationService) {
         this.reservationRepository = reservationRepository;
         this.restaurantService = restaurantService;
+        this.capacityValidationService = capacityValidationService;
     }
 
     public List<Reservation> getAllReservations() {
@@ -91,22 +91,15 @@ public class ReservationService {
                 reservationStartTime, reservationEndTime, operatingStart, operatingEnd);
         }
 
-
-        //TODO: [Feature 1 - c] Check space capacity, but allow concurrent reservations up to max capacity.
-        // Validate party size is within space capacity
+        // Validate party size is within space capacity (per-reservation validation)
         if (reservation.getPartySize() < space.getMinCapacity() ||
             reservation.getPartySize() > space.getMaxCapacity()) {
             throw new InvalidPartySizeException(
                 reservation.getPartySize(), space.getMinCapacity(), space.getMaxCapacity());
         }
 
-        // Check for overlapping reservations
-        if (hasOverlappingReservation(reservation.getRestaurantId(), reservation.getSpaceId(),
-            reservation.getStartTime(), reservation.getEndTime())) {
-            throw new ReservationConflictException(
-                reservation.getRestaurantId(), reservation.getSpaceId(),
-                reservation.getStartTime(), reservation.getEndTime());
-        }
+        // Validate capacity allows concurrent reservations (combined headcount must not exceed maxCapacity)
+        capacityValidationService.validateCapacity(reservation, space);
 
         return reservationRepository.save(reservation);
     }
@@ -133,30 +126,6 @@ public class ReservationService {
             .toList();
     }
 
-    private boolean hasOverlappingReservation(ObjectId restaurantId, UUID spaceId,
-                                              LocalDateTime startTime, LocalDateTime endTime) {
-        return reservationRepository.findAll().stream()
-            .anyMatch(existing -> existing.getRestaurantId().equals(restaurantId) &&
-                existing.getSpaceId().equals(spaceId) &&
-                isTimeOverlapping(existing.getStartTime(), existing.getEndTime(),
-                    startTime, endTime));
-    }
-
-    private boolean hasOverlappingReservationExcluding(ObjectId restaurantId, UUID spaceId,
-                                                       LocalDateTime startTime, LocalDateTime endTime,
-                                                       ObjectId excludeReservationId) {
-        return reservationRepository.findAll().stream()
-            .anyMatch(existing -> !existing.getId().equals(excludeReservationId) &&
-                existing.getRestaurantId().equals(restaurantId) &&
-                existing.getSpaceId().equals(spaceId) &&
-                isTimeOverlapping(existing.getStartTime(), existing.getEndTime(),
-                    startTime, endTime));
-    }
-
-    private boolean isTimeOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd,
-                                      LocalDateTime newStart, LocalDateTime newEnd) {
-        return newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart);
-    }
 
     /**
      * Aligns start time to the nearest slot boundary.

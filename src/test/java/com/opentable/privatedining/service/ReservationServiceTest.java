@@ -1,5 +1,6 @@
 package com.opentable.privatedining.service;
 
+import com.opentable.privatedining.exception.CapacityExceededException;
 import com.opentable.privatedining.exception.InvalidPartySizeException;
 import com.opentable.privatedining.exception.InvalidReservationDurationException;
 import com.opentable.privatedining.exception.MultiDayReservationException;
@@ -39,6 +40,9 @@ class ReservationServiceTest {
 
     @Mock
     private RestaurantService restaurantService;
+
+    @Mock
+    private CapacityValidationService capacityValidationService;
 
     @InjectMocks
     private ReservationService reservationService;
@@ -113,7 +117,7 @@ class ReservationServiceTest {
         savedReservation.setId(new ObjectId());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(reservation)).thenReturn(savedReservation);
 
         // When
@@ -211,13 +215,13 @@ class ReservationServiceTest {
     }
 
     @Test
-    void createReservation_WhenOverlappingReservationExists_ShouldThrowException() {
-        // Given
+    void createReservation_WhenOverlappingReservationExceedsCapacity_ShouldThrowCapacityExceededException() {
+        // Given: Overlapping reservation that would exceed capacity
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        LocalDateTime startTime = LocalDateTime.now().plusDays(1);
-        LocalDateTime endTime = startTime.plusHours(2);
+        LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 12, 0);
+        LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 14, 0);
 
         Reservation newReservation = createTestReservation("customer@example.com", 4);
         newReservation.setRestaurantId(restaurantId);
@@ -225,25 +229,20 @@ class ReservationServiceTest {
         newReservation.setStartTime(startTime);
         newReservation.setEndTime(endTime);
 
-        // Existing overlapping reservation
-        Reservation existingReservation = createTestReservation("other@example.com", 2);
-        existingReservation.setRestaurantId(restaurantId);
-        existingReservation.setSpaceId(spaceId);
-        existingReservation.setStartTime(startTime.minusMinutes(30));
-        existingReservation.setEndTime(endTime.minusMinutes(30));
-
         com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList(existingReservation));
+        // Capacity validation fails - throws exception
+        doThrow(new CapacityExceededException(
+            restaurantId, spaceId, startTime, endTime, 4, 6, 8))
+            .when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
 
         // When & Then
-        assertThrows(ReservationConflictException.class, () -> {
-            reservationService.createReservation(newReservation);
-        });
+        assertThrows(CapacityExceededException.class, () ->
+            reservationService.createReservation(newReservation));
         verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
@@ -456,7 +455,7 @@ class ReservationServiceTest {
         savedReservation.setId(new ObjectId());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(reservation)).thenReturn(savedReservation);
 
         // When
@@ -494,7 +493,7 @@ class ReservationServiceTest {
         savedReservation.setId(new ObjectId());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(reservation)).thenReturn(savedReservation);
 
         // When
@@ -562,7 +561,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -597,7 +596,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -632,7 +631,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -700,7 +699,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -735,7 +734,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -770,7 +769,7 @@ class ReservationServiceTest {
         restaurant.setSpaces(List.of(space));
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -781,6 +780,183 @@ class ReservationServiceTest {
         assertEquals(LocalDateTime.of(2026, 1, 20, 12, 0), result.getStartTime()); // 20 < 30, round down
         assertEquals(LocalDateTime.of(2026, 1, 20, 15, 0), result.getEndTime()); // Round up
         verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    // ==================== Flexible Capacity Management Tests ====================
+
+    @Test
+    void createReservation_WhenCapacityValidationPasses_ShouldSucceed() {
+        // Given: A valid reservation where capacity validation passes
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 20, 12, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 20, 14, 0));
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 10); // Max capacity 10
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        // Capacity validation passes (no exception thrown)
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(savedReservation);
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        verify(capacityValidationService).validateCapacity(any(Reservation.class), eq(space));
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenCombinedHeadcountExceedsMaxCapacity_ShouldThrowCapacityExceededException() {
+        // Given: A reservation that would exceed max capacity when combined with existing reservations
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation reservation = createTestReservation("customer@example.com", 6);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 20, 12, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 20, 14, 0));
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 10); // Max capacity 10
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        // Capacity validation fails - throws exception
+        doThrow(new CapacityExceededException(
+            restaurantId, spaceId,
+            reservation.getStartTime(), reservation.getEndTime(),
+            6, 6, 10)) // Current occupancy is 6, requesting 6 more, max is 10
+            .when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+
+        // When & Then
+        CapacityExceededException exception = assertThrows(CapacityExceededException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+
+        assertTrue(exception.getMessage().contains("Cannot accommodate party of 6"));
+        assertTrue(exception.getMessage().contains("Current occupancy: 6"));
+        assertTrue(exception.getMessage().contains("Max capacity: 10"));
+        assertTrue(exception.getMessage().contains("Available: 4"));
+        verify(capacityValidationService).validateCapacity(any(Reservation.class), eq(space));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenAtExactCapacityLimit_ShouldSucceed() {
+        // Given: A reservation that fills the space exactly to capacity
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 20, 12, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 20, 14, 0));
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 10); // Max capacity 10
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        // Capacity validation passes - current 6 + new 4 = 10 (exactly at limit)
+        doNothing().when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(savedReservation);
+
+        // When
+        Reservation result = reservationService.createReservation(reservation);
+
+        // Then
+        assertNotNull(result);
+        verify(capacityValidationService).validateCapacity(any(Reservation.class), eq(space));
+        verify(reservationRepository).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenOnePersonOverCapacity_ShouldThrowCapacityExceededException() {
+        // Given: A reservation that would exceed capacity by just 1 person
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation reservation = createTestReservation("customer@example.com", 5);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 20, 12, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 20, 14, 0));
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 10); // Max capacity 10
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        // Capacity validation fails - current 6 + new 5 = 11 (1 over limit)
+        doThrow(new CapacityExceededException(
+            restaurantId, spaceId,
+            reservation.getStartTime(), reservation.getEndTime(),
+            5, 6, 10))
+            .when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+
+        // When & Then
+        CapacityExceededException exception = assertThrows(CapacityExceededException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+
+        assertTrue(exception.getMessage().contains("Cannot accommodate party of 5"));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenPartySizeValidButCapacityExceeded_ShouldThrowCapacityExceededException() {
+        // Given: Party size is within min/max range but combined headcount exceeds capacity
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        // Party size 4 is valid (within 2-10 range), but if current occupancy is 8, total would be 12
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 20, 12, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 20, 14, 0));
+
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        Space space = new Space("Test Space", 2, 10);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        // Party size passes individual validation, but capacity check fails
+        doThrow(new CapacityExceededException(
+            restaurantId, spaceId,
+            reservation.getStartTime(), reservation.getEndTime(),
+            4, 8, 10)) // 8 + 4 = 12 > 10
+            .when(capacityValidationService).validateCapacity(any(Reservation.class), any(Space.class));
+
+        // When & Then
+        CapacityExceededException exception = assertThrows(CapacityExceededException.class, () -> {
+            reservationService.createReservation(reservation);
+        });
+
+        assertTrue(exception.getMessage().contains("Available: 2"));
+        verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
     private Reservation createTestReservation(String customerEmail, int partySize) {
