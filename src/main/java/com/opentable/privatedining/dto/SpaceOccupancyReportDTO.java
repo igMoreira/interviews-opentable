@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Occupancy report for a specific space")
-public class SpaceOccupancyReport {
+public class SpaceOccupancyReportDTO {
 
     @Schema(description = "Unique identifier of the space", example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID spaceId;
@@ -34,6 +34,6 @@ public class SpaceOccupancyReport {
     private double averageUtilization;
 
     @Schema(description = "Hourly breakdown of occupancy data")
-    private List<TimeSlotOccupancy> hourlyBreakdown;
+    private List<TimeSlotOccupancyDTO> hourlyBreakdown;
 }
 

@@ -1,6 +1,6 @@
 package com.opentable.privatedining.controller;
 
-import com.opentable.privatedining.dto.OccupancyReportResponse;
+import com.opentable.privatedining.dto.OccupancyReportDTO;
 import com.opentable.privatedining.dto.RestaurantDTO;
 import com.opentable.privatedining.dto.SpaceDTO;
 import com.opentable.privatedining.mapper.RestaurantMapper;
@@ -262,11 +262,11 @@ public class RestaurantController {
                     "Returns hourly breakdown of occupancy per space with utilization metrics.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Occupancy report generated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = OccupancyReportResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = OccupancyReportDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid parameters (invalid date range, exceeds max 31 days, or invalid ID format)"),
             @ApiResponse(responseCode = "404", description = "Restaurant or space not found")
     })
-    public ResponseEntity<OccupancyReportResponse> getOccupancyReport(
+    public ResponseEntity<OccupancyReportDTO> getOccupancyReport(
             @Parameter(description = "ID of the restaurant", required = true)
             @PathVariable String id,
             @Parameter(description = "Start of the report period (ISO date-time format)", required = true, example = "2026-01-20T09:00:00")
@@ -281,7 +281,7 @@ public class RestaurantController {
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Page size must be at least 1") int size) {
 
         ObjectId restaurantId = new ObjectId(id);
-        OccupancyReportResponse report = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO report = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, spaceId, page, size);
         return ResponseEntity.ok(report);
     }

@@ -1,7 +1,7 @@
 package com.opentable.privatedining.service;
 
 import com.opentable.privatedining.config.CacheConfig;
-import com.opentable.privatedining.dto.OccupancyReportResponse;
+import com.opentable.privatedining.dto.OccupancyReportDTO;
 import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
@@ -87,11 +87,11 @@ class OccupancyAnalyticsCacheTest {
                 .thenReturn(Collections.emptyList());
 
         // When - First call
-        OccupancyReportResponse firstResponse = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO firstResponse = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Second call with same parameters
-        OccupancyReportResponse secondResponse = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO secondResponse = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Then

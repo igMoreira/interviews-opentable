@@ -60,18 +60,18 @@ class OccupancyAnalyticsControllerTest {
         LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
         LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 18, 0);
 
-        OccupancySummary summary = new OccupancySummary(5, 25, 15, 45.5, 60.0);
+        OccupancySummaryDTO summary = new OccupancySummaryDTO(5, 25, 15, 45.5, 60.0);
 
         UUID spaceId = UUID.randomUUID();
-        List<TimeSlotOccupancy> hourlyBreakdown = Arrays.asList(
-                new TimeSlotOccupancy(startTime, startTime.plusHours(1), 2, 10, 25, 40.0),
-                new TimeSlotOccupancy(startTime.plusHours(1), startTime.plusHours(2), 3, 15, 25, 60.0)
+        List<TimeSlotOccupancyDTO> hourlyBreakdown = Arrays.asList(
+                new TimeSlotOccupancyDTO(startTime, startTime.plusHours(1), 2, 10, 25, 40.0),
+                new TimeSlotOccupancyDTO(startTime.plusHours(1), startTime.plusHours(2), 3, 15, 25, 60.0)
         );
 
-        SpaceOccupancyReport spaceReport = new SpaceOccupancyReport(
+        SpaceOccupancyReportDTO spaceReport = new SpaceOccupancyReportDTO(
                 spaceId, "Garden Room", 25, 5, 15, 50.0, hourlyBreakdown);
 
-        OccupancyReportResponse response = new OccupancyReportResponse(
+        OccupancyReportDTO response = new OccupancyReportDTO(
                 restaurantId.toHexString(), startTime, endTime, summary,
                 List.of(spaceReport), 0, 10, 1, 1);
 
@@ -105,11 +105,11 @@ class OccupancyAnalyticsControllerTest {
         LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
         LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 18, 0);
 
-        OccupancySummary summary = new OccupancySummary(3, 15, 10, 40.0, 50.0);
-        SpaceOccupancyReport spaceReport = new SpaceOccupancyReport(
+        OccupancySummaryDTO summary = new OccupancySummaryDTO(3, 15, 10, 40.0, 50.0);
+        SpaceOccupancyReportDTO spaceReport = new SpaceOccupancyReportDTO(
                 spaceId, "Garden Room", 25, 3, 10, 40.0, Collections.emptyList());
 
-        OccupancyReportResponse response = new OccupancyReportResponse(
+        OccupancyReportDTO response = new OccupancyReportDTO(
                 restaurantId.toHexString(), startTime, endTime, summary,
                 List.of(spaceReport), 0, 10, 1, 1);
 
@@ -133,8 +133,8 @@ class OccupancyAnalyticsControllerTest {
         LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
         LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 18, 0);
 
-        OccupancySummary summary = new OccupancySummary(0, 0, 0, 0.0, 0.0);
-        OccupancyReportResponse response = new OccupancyReportResponse(
+        OccupancySummaryDTO summary = new OccupancySummaryDTO(0, 0, 0, 0.0, 0.0);
+        OccupancyReportDTO response = new OccupancyReportDTO(
                 restaurantId.toHexString(), startTime, endTime, summary,
                 Collections.emptyList(), 2, 5, 15, 3);
 
@@ -280,8 +280,8 @@ class OccupancyAnalyticsControllerTest {
         LocalDateTime startTime = LocalDateTime.of(2026, 1, 20, 9, 0);
         LocalDateTime endTime = LocalDateTime.of(2026, 1, 20, 18, 0);
 
-        OccupancySummary summary = new OccupancySummary(0, 0, 0, 0.0, 0.0);
-        OccupancyReportResponse response = new OccupancyReportResponse(
+        OccupancySummaryDTO summary = new OccupancySummaryDTO(0, 0, 0, 0.0, 0.0);
+        OccupancyReportDTO response = new OccupancyReportDTO(
                 restaurantId.toHexString(), startTime, endTime, summary,
                 Collections.emptyList(), 0, 10, 0, 0);
 

@@ -869,3 +869,5 @@ server:
 6. **Event sourcing** - Full audit trail of reservation changes
 7. **Notification system** - Email/SMS confirmations and reminders
 
+## Note
+GitHub Copilot was used to assist in the development of this project.

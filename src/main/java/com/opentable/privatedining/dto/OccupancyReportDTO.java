@@ -1,5 +1,6 @@
 package com.opentable.privatedining.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,22 +14,24 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Complete occupancy analytics report for a restaurant")
-public class OccupancyReportResponse {
+public class OccupancyReportDTO {
 
     @Schema(description = "Unique identifier of the restaurant", example = "507f1f77bcf86cd799439011")
     private String restaurantId;
 
-    @Schema(description = "Start time of the report period", example = "2026-01-20T09:00:00")
+    @Schema(description = "Start time of the report period", example = "2026-01-20 09:00")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime reportStartTime;
 
-    @Schema(description = "End time of the report period", example = "2026-01-20T18:00:00")
+    @Schema(description = "End time of the report period", example = "2026-01-20 18:00")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime reportEndTime;
 
     @Schema(description = "Summary metrics for the entire report period")
-    private OccupancySummary summary;
+    private OccupancySummaryDTO summary;
 
     @Schema(description = "Detailed occupancy reports per space (paginated)")
-    private List<SpaceOccupancyReport> spaceReports;
+    private List<SpaceOccupancyReportDTO> spaceReports;
 
     @Schema(description = "Current page number (0-based)", example = "0")
     private int page;

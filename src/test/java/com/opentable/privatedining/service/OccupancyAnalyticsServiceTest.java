@@ -1,9 +1,9 @@
 package com.opentable.privatedining.service;
 
 import com.opentable.privatedining.config.AnalyticsConfig;
-import com.opentable.privatedining.dto.OccupancyReportResponse;
-import com.opentable.privatedining.dto.SpaceOccupancyReport;
-import com.opentable.privatedining.dto.TimeSlotOccupancy;
+import com.opentable.privatedining.dto.OccupancyReportDTO;
+import com.opentable.privatedining.dto.SpaceOccupancyReportDTO;
+import com.opentable.privatedining.dto.TimeSlotOccupancyDTO;
 import com.opentable.privatedining.exception.InvalidDateRangeException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
 import com.opentable.privatedining.exception.SpaceNotFoundException;
@@ -195,7 +195,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, space1.getId(), 0, 10);
 
         // Then
@@ -217,7 +217,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Then
@@ -240,7 +240,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When - request page 0 with size 1
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 1);
 
         // Then
@@ -264,7 +264,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When - request page 1 with size 1
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 1, 1);
 
         // Then
@@ -286,7 +286,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When - request page 10 which doesn't exist (only 2 spaces)
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 10, 10);
 
         // Then
@@ -319,29 +319,29 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Arrays.asList(reservation1, reservation2));
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, space1.getId(), 0, 10);
 
         // Then
-        SpaceOccupancyReport spaceReport = response.getSpaceReports().get(0);
+        SpaceOccupancyReportDTO spaceReport = response.getSpaceReports().get(0);
         assertEquals(2, spaceReport.getTotalReservations());
 
         // Check hourly breakdown
-        List<TimeSlotOccupancy> hourlyBreakdown = spaceReport.getHourlyBreakdown();
+        List<TimeSlotOccupancyDTO> hourlyBreakdown = spaceReport.getHourlyBreakdown();
         assertEquals(3, hourlyBreakdown.size()); // 10-11, 11-12, 12-13
 
         // 10:00-11:00: reservation1 only (8 guests)
-        TimeSlotOccupancy slot1 = hourlyBreakdown.get(0);
+        TimeSlotOccupancyDTO slot1 = hourlyBreakdown.get(0);
         assertEquals(1, slot1.getReservationCount());
         assertEquals(8, slot1.getOccupancy());
 
         // 11:00-12:00: both reservations (8 + 6 = 14 guests)
-        TimeSlotOccupancy slot2 = hourlyBreakdown.get(1);
+        TimeSlotOccupancyDTO slot2 = hourlyBreakdown.get(1);
         assertEquals(2, slot2.getReservationCount());
         assertEquals(14, slot2.getOccupancy());
 
         // 12:00-13:00: reservation2 only (6 guests)
-        TimeSlotOccupancy slot3 = hourlyBreakdown.get(2);
+        TimeSlotOccupancyDTO slot3 = hourlyBreakdown.get(2);
         assertEquals(1, slot3.getReservationCount());
         assertEquals(6, slot3.getOccupancy());
 
@@ -368,12 +368,12 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(List.of(reservation));
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, space1.getId(), 0, 10);
 
         // Then
-        SpaceOccupancyReport spaceReport = response.getSpaceReports().get(0);
-        TimeSlotOccupancy slot = spaceReport.getHourlyBreakdown().get(0);
+        SpaceOccupancyReportDTO spaceReport = response.getSpaceReports().get(0);
+        TimeSlotOccupancyDTO slot = spaceReport.getHourlyBreakdown().get(0);
 
         assertEquals(10, slot.getOccupancy());
         assertEquals(25, slot.getMaxCapacity());
@@ -393,7 +393,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Then
@@ -424,7 +424,7 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Arrays.asList(res1, res2));
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Then
@@ -453,13 +453,13 @@ class OccupancyAnalyticsServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When
-        OccupancyReportResponse response = occupancyAnalyticsService.generateOccupancyReport(
+        OccupancyReportDTO response = occupancyAnalyticsService.generateOccupancyReport(
                 restaurantId, startTime, endTime, null, 0, 10);
 
         // Then - should not throw division by zero, utilization should be 0
         assertNotNull(response);
         assertEquals(1, response.getSpaceReports().size());
-        SpaceOccupancyReport spaceReport = response.getSpaceReports().get(0);
+        SpaceOccupancyReportDTO spaceReport = response.getSpaceReports().get(0);
         assertEquals(0.0, spaceReport.getAverageUtilization(), 0.01);
     }
 

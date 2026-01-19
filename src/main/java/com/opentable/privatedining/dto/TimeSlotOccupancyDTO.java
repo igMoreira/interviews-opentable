@@ -1,5 +1,6 @@
 package com.opentable.privatedining.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -12,12 +13,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Occupancy data for a specific time slot")
-public class TimeSlotOccupancy {
+public class TimeSlotOccupancyDTO {
 
-    @Schema(description = "Start time of the slot", example = "2026-01-20T12:00:00")
+    @Schema(description = "Start time of the slot", example = "2026-01-20 12:00")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime slotStart;
 
-    @Schema(description = "End time of the slot", example = "2026-01-20T13:00:00")
+    @Schema(description = "End time of the slot", example = "2026-01-20 13:00")
+    @JsonFormat(pattern = "dd-MM-yyyy HH:mm")
     private LocalDateTime slotEnd;
 
     @Schema(description = "Number of reservations in this slot", example = "3")

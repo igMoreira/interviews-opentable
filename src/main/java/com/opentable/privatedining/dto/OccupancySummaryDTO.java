@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Summary of occupancy metrics for the entire report period")
-public class OccupancySummary {
+public class OccupancySummaryDTO {
 
     @Schema(description = "Total number of reservations across all spaces", example = "12")
     private int totalReservations;

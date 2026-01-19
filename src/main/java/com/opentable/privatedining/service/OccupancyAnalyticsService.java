@@ -65,7 +65,7 @@ public class OccupancyAnalyticsService {
      * @throws SpaceNotFoundException if the specified space is not found
      */
     @Cacheable(value = "occupancyReports", key = "{#restaurantId, #startTime, #endTime, #spaceId, #page, #size}")
-    public OccupancyReportResponse generateOccupancyReport(
+    public OccupancyReportDTO generateOccupancyReport(
             ObjectId restaurantId,
             LocalDateTime startTime,
             LocalDateTime endTime,
@@ -86,23 +86,23 @@ public class OccupancyAnalyticsService {
                 restaurantId, reservations.size(), spacesToReport.size());
 
         // Generate reports for all spaces (needed for summary)
-        List<SpaceOccupancyReport> allSpaceReports = new ArrayList<>();
+        List<SpaceOccupancyReportDTO> allSpaceReports = new ArrayList<>();
         for (Space space : spacesToReport) {
-            SpaceOccupancyReport spaceReport = generateSpaceReport(space, reservations, startTime, endTime);
+            SpaceOccupancyReportDTO spaceReport = generateSpaceReport(space, reservations, startTime, endTime);
             allSpaceReports.add(spaceReport);
         }
 
         // Calculate summary from all spaces
-        OccupancySummary summary = calculateSummary(allSpaceReports, reservations, spacesToReport);
+        OccupancySummaryDTO summary = calculateSummary(allSpaceReports, reservations, spacesToReport);
 
         // Apply pagination to space reports
         int totalElements = allSpaceReports.size();
         int totalPages = (int) Math.ceil((double) totalElements / size);
         int fromIndex = Math.min(page * size, totalElements);
         int toIndex = Math.min(fromIndex + size, totalElements);
-        List<SpaceOccupancyReport> paginatedReports = allSpaceReports.subList(fromIndex, toIndex);
+        List<SpaceOccupancyReportDTO> paginatedReports = allSpaceReports.subList(fromIndex, toIndex);
 
-        return new OccupancyReportResponse(
+        return new OccupancyReportDTO(
                 restaurantId.toHexString(),
                 startTime,
                 endTime,
@@ -163,26 +163,26 @@ public class OccupancyAnalyticsService {
     /**
      * Generates an occupancy report for a single space.
      */
-    private SpaceOccupancyReport generateSpaceReport(Space space, List<Reservation> allReservations,
+    private SpaceOccupancyReportDTO generateSpaceReport(Space space, List<Reservation> allReservations,
                                                       LocalDateTime startTime, LocalDateTime endTime) {
         List<Reservation> spaceReservations = allReservations.stream()
                 .filter(r -> r.getSpaceId().equals(space.getId()))
                 .toList();
 
-        List<TimeSlotOccupancy> hourlyBreakdown = generateHourlyBreakdown(
+        List<TimeSlotOccupancyDTO> hourlyBreakdown = generateHourlyBreakdown(
                 space, spaceReservations, startTime, endTime);
 
         int peakOccupancy = hourlyBreakdown.stream()
-                .mapToInt(TimeSlotOccupancy::getOccupancy)
+                .mapToInt(TimeSlotOccupancyDTO::getOccupancy)
                 .max()
                 .orElse(0);
 
         double averageUtilization = hourlyBreakdown.stream()
-                .mapToDouble(TimeSlotOccupancy::getUtilizationPercentage)
+                .mapToDouble(TimeSlotOccupancyDTO::getUtilizationPercentage)
                 .average()
                 .orElse(0.0);
 
-        return new SpaceOccupancyReport(
+        return new SpaceOccupancyReportDTO(
                 space.getId(),
                 space.getName(),
                 space.getMaxCapacity(),
@@ -196,9 +196,9 @@ public class OccupancyAnalyticsService {
     /**
      * Generates hourly breakdown of occupancy for a space.
      */
-    private List<TimeSlotOccupancy> generateHourlyBreakdown(Space space, List<Reservation> reservations,
+    private List<TimeSlotOccupancyDTO> generateHourlyBreakdown(Space space, List<Reservation> reservations,
                                                             LocalDateTime startTime, LocalDateTime endTime) {
-        List<TimeSlotOccupancy> slots = new ArrayList<>();
+        List<TimeSlotOccupancyDTO> slots = new ArrayList<>();
         int slotDurationMinutes = analyticsConfig.getTimeSlotDurationMinutes();
 
         LocalDateTime current = startTime.truncatedTo(ChronoUnit.HOURS);
@@ -222,7 +222,7 @@ public class OccupancyAnalyticsService {
                     ? (double) occupancy / space.getMaxCapacity() * 100
                     : 0.0;
 
-            slots.add(new TimeSlotOccupancy(
+            slots.add(new TimeSlotOccupancyDTO(
                     slotStart,
                     slotEnd,
                     reservationCount,
@@ -247,7 +247,7 @@ public class OccupancyAnalyticsService {
     /**
      * Calculates the summary metrics from all space reports.
      */
-    private OccupancySummary calculateSummary(List<SpaceOccupancyReport> spaceReports,
+    private OccupancySummaryDTO calculateSummary(List<SpaceOccupancyReportDTO> spaceReports,
                                                List<Reservation> reservations,
                                                List<Space> spaces) {
         int totalReservations = reservations.size();
@@ -257,12 +257,12 @@ public class OccupancyAnalyticsService {
                 .sum();
 
         int peakOccupancy = spaceReports.stream()
-                .mapToInt(SpaceOccupancyReport::getPeakOccupancy)
+                .mapToInt(SpaceOccupancyReportDTO::getPeakOccupancy)
                 .max()
                 .orElse(0);
 
         double averageUtilization = spaceReports.stream()
-                .mapToDouble(SpaceOccupancyReport::getAverageUtilization)
+                .mapToDouble(SpaceOccupancyReportDTO::getAverageUtilization)
                 .average()
                 .orElse(0.0);
 
@@ -274,7 +274,7 @@ public class OccupancyAnalyticsService {
                 ? (double) peakOccupancy / totalMaxCapacity * 100
                 : 0.0;
 
-        return new OccupancySummary(
+        return new OccupancySummaryDTO(
                 totalReservations,
                 totalGuests,
                 peakOccupancy,
